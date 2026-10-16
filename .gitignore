@@ -1,0 +1,80 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Caches and testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+coverage.xml
+
+# Project Data and Captures (Constitution VI, X)
+data/
+*.db
+*.sqlite
+*.sqlite3
+captures/
+scripts/spikes/captures/
+eval/results/
+eval/runs/
+
+# Secrets and Environment Variables (Constitution X)
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Node.js and Web App
+node_modules/
+web/node_modules/
+web/dist/
+web/.next/
+web/coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Playwright
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# OS and IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo

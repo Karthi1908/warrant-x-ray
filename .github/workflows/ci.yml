@@ -1,0 +1,127 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 001-warrant-xray]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --frozen --extra dev
+
+      - name: Ruff Lint & Format Check
+        run: |
+          uv run ruff check .
+          uv run ruff format --check .
+
+      - name: Mypy Type Check
+        run: uv run mypy src/
+
+      - name: Run Backend Tests
+        run: uv run pytest -m "not live"
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install Web Dependencies
+        run: npm ci
+
+      - name: Lint and Format
+        run: |
+          npm run lint
+          npm run format:check
+
+      - name: TypeScript Check
+        run: npm run typecheck
+
+      - name: Vitest Unit & Component Tests
+        run: npm run test
+
+      - name: Build Web Application
+        run: npm run build
+
+      - name: Verify Bundle Size (<300 KB gzipped)
+        run: node scripts/check-bundle-size.js
+
+  e2e:
+    needs: [backend, web]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend & web deps
+        run: |
+          uv sync --frozen --extra dev
+          cd web && npm ci && npx playwright install --with-deps
+
+      - name: Run Playwright E2E & A11y Tests (Replay Mode)
+        env:
+          WX_LLM_STUB: "true"
+          WX_SOURCE_ENABLED: "false"
+        run: |
+          cd web && npm run test:e2e
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Pip Audit (Python Dependencies)
+        run: |
+          uv pip install pip-audit
+          uv run pip-audit --desc
+
+      - name: Npm Audit (Web Dependencies)
+        run: |
+          cd web && npm audit --audit-level=high || true

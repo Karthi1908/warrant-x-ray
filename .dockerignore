@@ -1,0 +1,17 @@
+.git/
+.github/
+.specify/
+specs/
+tests/
+docs/
+.venv/
+venv/
+data/*.db
+data/*.sqlite
+node_modules/
+web/node_modules/
+web/dist/
+__pycache__/
+*.py[cod]
+.env*
+!.env.example

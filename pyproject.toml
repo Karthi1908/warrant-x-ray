@@ -1,0 +1,74 @@
+[project]
+name = "warrantx"
+version = "0.1.0"
+description = "Chat-first risk copilot for Bursa Malaysia structured warrants"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "google-adk>=0.1.0",
+    "litellm>=1.40.0",
+    "openai>=1.30.0",
+    "tavily-python>=0.5.0",
+    "fastapi>=0.111.0",
+    "uvicorn[standard]>=0.30.0",
+    "sse-starlette>=2.1.0",
+    "pydantic>=2.7.0",
+    "pydantic-settings>=2.3.0",
+    "httpx>=0.27.0",
+    "tenacity>=8.3.0",
+    "sqlalchemy>=2.0.30",
+    "aiosqlite>=0.20.0",
+    "rapidfuzz>=3.9.0",
+    "pyyaml>=6.0.1",
+    "yfinance>=0.2.40",
+    "numpy>=1.26.0",
+    "scipy>=1.13.0",
+    "structlog>=24.2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-asyncio>=0.23.0",
+    "hypothesis>=6.100.0",
+    "respx>=0.21.0",
+    "ruff>=0.4.0",
+    "mypy>=1.10.0",
+    "types-pyyaml>=6.0.12",
+    "pre-commit>=3.7.0",
+    "pip-audit>=2.7.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/warrantx"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "warrantx.quant.*"
+disallow_untyped_defs = true
+strict = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q -m 'not live'"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "live: marks tests as requiring real external API keys or live network calls",
+]
