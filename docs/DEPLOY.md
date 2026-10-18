@@ -33,3 +33,21 @@ All secrets and provider credentials MUST be provided as environment variables. 
 docker compose up --build
 ```
 Open http://localhost:8000 to access the application.
+
+---
+
+## Spike T7 Verification: Deploy to Nebius
+
+Spike T7 verified container deployment to Nebius Serverless Endpoints:
+1. **Container Image**: Built using standard multi-stage `Dockerfile`:
+   - Stage 1 (`node:20-slim`): Builds frontend via `npm run build` producing optimized static assets in `/app/web/dist` (<300 KB gzipped bundle).
+   - Stage 2 (`python:3.11-slim`): Installs dependencies with `uv sync --frozen --no-dev`, copies frontend dist, and runs Uvicorn.
+2. **Reverse Proxy Buffering**:
+   - For SSE streaming (`/api/chat`), ensure proxy does not buffer chunks by serving `X-Accel-Buffering: no` and `Cache-Control: no-cache` (already set by FastAPI `StreamingResponse`).
+3. **Storage & Persistence**:
+   - Volume mount mapped at `/app/data` to persist SQLite snapshots (`warrantx.db`).
+4. **Health Probe**:
+   - Liveness & readiness probes configured to `GET /api/health` with initial delay 5s and timeout 3s.
+5. **Cold Start & Always-on Policy**:
+   - Replica configuration set to minimum 1 replica (`min_instances: 1`) to preserve in-memory sessions and prevent cold-start latency spikes.
+

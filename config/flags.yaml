@@ -1,0 +1,22 @@
+# Warrant X-Ray Risk Flag Thresholds and Calculation Settings
+# Single source of truth for operator-configurable thresholds (FR-023)
+
+risk_free_rate: 0.03 # 3.0% annual benchmark rate (FR-023, OI-08)
+
+# Liquidity flags
+low_liquidity_spread_pct: 0.10 # 10% bid-ask spread
+zero_bid_quote_flag: true
+
+# Decay and time flags
+high_decay_theta_pct: 0.02 # > 2% flat underlying decay per day
+approaching_expiry_days: 14 # < 14 calendar days to expiry
+
+# Leverage and pricing flags
+high_effective_gearing: 10.0 # > 10x effective gearing
+deep_otm_moneyness: 0.80 # < 80% moneyness for calls / > 120% for puts
+
+# Issuer cross-check mismatch thresholds
+issuer_mismatch:
+  iv_points: 3.0 # Gap > 3.0 IV points between recomputed and issuer IV
+  effective_gearing_pct: 0.15 # > 15% relative difference
+  delta: 0.10 # > 0.10 absolute delta difference

@@ -1,24 +1,39 @@
 :root {
-  --background: 220 20% 98%;
-  --foreground: 220 20% 10%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 20% 10%;
+  /* Crisp Light Theme with Dark Sharp Boundaries & Dark Blue/Black Content */
+  --background: 215 35% 97%;
+  --foreground: 222 75% 7%;            /* #050B17 - ultra-sharp deep dark navy/black */
+  
+  --card: 0 0% 100%;                   /* Solid, clean white */
+  --card-foreground: 222 75% 7%;       /* Deep dark navy/black */
+  
   --popover: 0 0% 100%;
-  --popover-foreground: 220 20% 10%;
-  --primary: 217 91% 60%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 220 14% 92%;
-  --secondary-foreground: 220 20% 15%;
-  --muted: 220 14% 94%;
-  --muted-foreground: 220 10% 45%;
-  --accent: 217 91% 95%;
-  --accent-foreground: 217 91% 40%;
-  --destructive: 0 84% 60%;
-  --destructive-foreground: 210 40% 98%;
-  --border: 220 13% 88%;
-  --input: 220 13% 88%;
-  --ring: 217 91% 60%;
-  --radius: 0.5rem;
+  --popover-foreground: 222 75% 7%;
+  
+  --primary: 243 75% 52%;              /* Electric vibrant indigo */
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 220 28% 92%;
+  --secondary-foreground: 222 70% 10%;
+  
+  --muted: 220 25% 92%;
+  --muted-foreground: 222 65% 16%;     /* #0F1D30 - sharp, dark navy font (never washed-out gray) */
+  
+  --accent: 243 85% 95%;
+  --accent-foreground: 243 75% 38%;
+  
+  --destructive: 350 89% 56%;
+  --destructive-foreground: 0 0% 100%;
+  
+  --border: 222 50% 16%;               /* #141F30 - solid, razor-sharp, dark slate-navy boundaries */
+  --input: 222 50% 20%;                /* #182538 */
+  --ring: 243 75% 52%;
+  --radius: 0.65rem;
+
+  /* Semantic vibrant accents */
+  --call-emerald: 158 80% 34%;
+  --put-fuchsia: 280 85% 46%;
+  --gearing-cyan: 199 95% 40%;
+  --warning-amber: 38 95% 42%;
 }
 
 .dark {
@@ -41,4 +56,8 @@
   --border: 224 16% 20%;
   --input: 224 16% 20%;
   --ring: 217 91% 60%;
+  --call-emerald: 158 64% 48%;
+  --put-fuchsia: 280 75% 60%;
+  --gearing-cyan: 199 89% 56%;
+  --warning-amber: 38 92% 56%;
 }

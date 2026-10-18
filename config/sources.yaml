@@ -1,0 +1,21 @@
+# Allowed and preferred Malaysian news source domains
+# Baseline dated: 2026-10-16
+
+allowed_domains:
+  - theedgemalaysia.com
+  - thestar.com.my
+  - nst.com.my
+  - businesstoday.com.my
+  - bernama.com
+  - malaymail.com
+  - sinchew.com.my
+  - bharian.com.my
+
+recency:
+  strict_window_days: 7
+
+search_params:
+  search_depth: basic
+  include_answer: false
+  include_images: false
+  max_results: 6

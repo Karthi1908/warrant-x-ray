@@ -1,0 +1,19 @@
+# Regulatory Advice Linter Patterns (English and Malay)
+# Principle III: Describe, never advise.
+
+prohibited_patterns:
+  en:
+    - "(?i)\\b(should|ought to|must)\\s+(buy|sell|hold|enter|exit)\\b"
+    - "(?i)\\b(target\\s+price|price\\s+target)\\b"
+    - "(?i)\\b(stop[- ]?loss|take[- ]?profit)\\b"
+    - "(?i)\\b(strong\\s+buy|strong\\s+sell)\\b"
+    - "(?i)\\b(guaranteed|risk[- ]?free)\\s+(return|profit|gain)\\b"
+    - "(?i)\\b(my\\s+recommendation|i\\s+recommend)\\b"
+    - "(?i)\\b(price\\s+will\\s+(reach|hit|rise\\s+to|fall\\s+to))\\b"
+  ms:
+    - "(?i)\\b(patut|harus|perlu|mesti)\\s+(beli|jual|pegang)\\b"
+    - "(?i)\\b(harga\\s+sasaran|sasaran\\s+harga)\\b"
+    - "(?i)\\b(henti\\s+rugi|ambil\\s+untung)\\b"
+    - "(?i)\\b(pulangan|keuntungan)\\s+(dijamin|tanpa\\s+risiko)\\b"
+    - "(?i)\\b(cadangan\\s+saya|saya\\s+cadangkan)\\b"
+    - "(?i)\\b(harga\\s+akan\\s+(mencapai|naik\\s+ke|turun\\s+ke))\\b"

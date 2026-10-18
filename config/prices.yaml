@@ -1,0 +1,37 @@
+# Token pricing and limits for Nebius Token Factory and Tavily
+# Baseline dated: 2026-10-16
+
+currency: USD
+
+models:
+  nemotron-3-nano:
+    tier: nano
+    input_price_per_million: 0.15
+    output_price_per_million: 0.60
+    reasoning_price_per_million: 0.60
+    max_context_tokens: 32768
+    rpm_limit: 300
+    tpm_limit: 500000
+
+  nemotron-3-super:
+    tier: super
+    input_price_per_million: 0.80
+    output_price_per_million: 2.40
+    reasoning_price_per_million: 2.40
+    max_context_tokens: 65536
+    rpm_limit: 120
+    tpm_limit: 300000
+
+  nemotron-3-ultra:
+    tier: ultra
+    input_price_per_million: 2.50
+    output_price_per_million: 10.00
+    reasoning_price_per_million: 10.00
+    max_context_tokens: 131072
+    rpm_limit: 60
+    tpm_limit: 150000
+
+services:
+  tavily:
+    cost_per_credit_usd: 0.005
+    default_daily_credits: 200
