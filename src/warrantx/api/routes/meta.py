@@ -29,6 +29,7 @@ class SnapshotSummary(BaseModel):
     id: int
     fetched_at: str
     row_count: int = 0
+    collector_source: str = "direct_screener"
     ok: bool = True
     note: str = ""
 
@@ -45,6 +46,10 @@ class MetaResponse(BaseModel):
     version: str = "0.1.0"
     mode: str = Field(description="Operational mode: live, replay, sample")
     as_of: str = Field(description="UTC timestamp of current market data")
+    collector_source: str = Field(
+        default="direct_screener",
+        description="Source of current snapshot: tavily_crawl | direct_screener | stored_replay | synthetic_sample",
+    )
     market_open: bool = False
     stale: bool = False
     staleness_seconds: int = 0
@@ -69,6 +74,7 @@ async def get_meta(request: Request) -> MetaResponse:
     stale = False
     staleness_seconds = 0
     last_status = "ok"
+    collector_source = "direct_screener"
 
     if repo:
         m = await repo.get_usage_metrics(today_my)
@@ -83,6 +89,7 @@ async def get_meta(request: Request) -> MetaResponse:
 
         latest = await repo.get_latest_good_snapshot()
         if latest:
+            collector_source = getattr(latest, "collector_source", "direct_screener")
             if hasattr(latest.fetched_at, "isoformat"):
                 as_of = latest.fetched_at.isoformat()
             else:
@@ -105,6 +112,7 @@ async def get_meta(request: Request) -> MetaResponse:
         version="0.1.0",
         mode=mode,
         as_of=as_of,
+        collector_source=collector_source,
         market_open=market_open,
         stale=stale,
         staleness_seconds=staleness_seconds,
@@ -138,6 +146,7 @@ async def get_snapshots(request: Request) -> SnapshotsResponse:
             if hasattr(s.fetched_at, "isoformat")
             else str(s.fetched_at),
             row_count=s.row_count,
+            collector_source=getattr(s, "collector_source", "direct_screener"),
             ok=s.ok,
             note=s.note or "",
         )

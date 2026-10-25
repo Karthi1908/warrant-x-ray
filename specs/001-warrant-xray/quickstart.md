@@ -28,6 +28,7 @@ A run-and-check guide. It contains no implementation code; commands reflect the 
 | Weekend/outage | Set `WX_SOURCE_ENABLED=false` or run on a Sunday | Latest snapshot served, closed-market or replay badge, sample prompts all grounded | AC-12, AC-13 |
 | Budget cap | Set a tiny `WX_LLM_DAILY_USD_CAP` | Stored or templated answer with notice | AC-14 |
 | Usage tracking | Open page, run chat turn & scenario, check `/api/meta` & Data Health tab | Visits and query counts increment; raw IPs never stored | FR-020, SC-011 |
+| Tavily Crawler | Run collector with `WX_TAVILY_CRAWL=true` in live mode | Snapshot created with `collector_source='tavily_crawl'`, crawl credits tracked (≤50), deterministic parsing verified | FR-007, FR-020 |
 | Mobile | Phone-width viewport | Evidence panel opens as a sheet; no login | AC-18 |
 
 ## 3. Automated suites

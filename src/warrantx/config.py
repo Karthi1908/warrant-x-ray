@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     feature_chatter: bool = Field(default=False, description="Enable forum chatter context (off by default)")
     tavily_research: bool = Field(default=False, description="Enable Tavily deep research (off by default)")
     tavily_crawl: bool = Field(default=False, description="Enable Tavily crawl (off by default)")
+    tavily_crawl_credit_limit: int = Field(default=50, description="Daily Tavily crawl credit ceiling (50/day)")
+    tavily_crawl_url: Optional[str] = Field(default=None, description="Target URL for warrant screener crawling")
 
     # Operational Mode and Models
     mode: str = Field(default="sample", description="Operational mode: live, replay, sample")

@@ -34,10 +34,12 @@ class TavilyGateway:
         api_key: str | None = None,
         timeout: float = 10.0,
         enabled: bool = True,
+        daily_credit_limit: int = 200,
     ) -> None:
         self.api_key = api_key or os.environ.get("WX_TAVILY_API_KEY", "")
         self.timeout = timeout
         self.enabled = enabled and bool(self.api_key)
+        self.daily_credit_limit = daily_credit_limit
         self._client: AsyncTavilyClient | None = None
 
     @property

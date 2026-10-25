@@ -38,7 +38,7 @@ htmlcov/
 coverage.xml
 
 # Project Data and Captures (Constitution VI, X)
-data/
+/data/
 *.db
 *.sqlite
 *.sqlite3

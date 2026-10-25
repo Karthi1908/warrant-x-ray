@@ -15,7 +15,7 @@ Source: [requirements.md](../../../requirements.md) Section 9 and [tech_spec.md]
 | Method and path | Purpose | Inputs | Notes |
 |---|---|---|---|
 | GET `/api/health` | Liveness | none | Used by container health check |
-| GET `/api/meta` | Mode, as-of, staleness, last collection status, resolved model IDs, tier health, version, usage metrics | none | Returns public usage counts: `visits`, `unique_visitors_daily`, `interactive_queries` (FR-020) |
+| GET `/api/meta` | Mode, as-of, staleness, last collection status (including `collector_source`: `'tavily_crawl'` \| `'direct_screener'`), resolved model IDs, tier health, version, usage metrics | none | Returns public usage counts: `visits`, `unique_visitors_daily`, `interactive_queries` (FR-020) |
 | GET `/api/underlyings` | Malaysian underlyings with warrant counts | snapshot_id | |
 | GET `/api/warrants` | Search (FR-SRCH) | underlying, type, issuer, min_days, max_days, moneyness, sort_by, order, limit (default 10, max 20), iv_basis | `iv_basis` selects headline IV (defaults to `mid`, falling back to `last` if quotes are missing); all bases always returned. Empty stock returns an empty list with a message, not an error |
 | GET `/api/warrants/{code}` | Warrant card (FR-CARD) | holding_days, snapshot_id, iv_basis? | Code case-insensitive and trimmed; headline IV defaults to `mid` (falls back to `last` if quotes are missing); unknown code returns 404 with up to 3 closest codes |
@@ -28,9 +28,10 @@ Source: [requirements.md](../../../requirements.md) Section 9 and [tech_spec.md]
 | POST `/api/chat` | Streamed chat turn | session_id, message (1 to 1000 chars), mode (`chat`\|`deep`), snapshot_id | See [chat-sse.md](chat-sse.md) |
 | GET `/api/report/{id}` | Stored Deep Risk Report | none | |
 | GET `/api/sources` | Evidence records for a turn | turn_id | |
-| GET `/api/admin/metrics` | Operator usage, cost, and query metrics | none (Bearer auth) | Requires `WX_ADMIN_TOKEN`; returns daily breakdowns of visits, daily uniques, query types, and token spend (FR-020, FR-023) |
+| GET `/api/admin/metrics` | Operator usage, cost, and query metrics | none (Bearer auth) | Requires `WX_ADMIN_TOKEN`; returns daily breakdowns of visits, daily uniques, query types, token spend, and Tavily crawl credits (FR-020, FR-023) |
+| POST `/api/admin/collect` | Trigger collector snapshot cycle | source? (`tavily_crawl` \| `direct_screener`) | Requires `WX_ADMIN_TOKEN`; runs Tavily crawl with screener fallback |
 
-Admin routes (usage and cost totals, cache clear) exist only when `WX_ADMIN_TOKEN` is set and require it as a bearer token. Anonymous visits are counted via an ephemeral `X-Session-ID` client UUID header/cookie (24h expiry); daily unique visitors use a daily-salted one-way cryptographic hash of client subnet/User-Agent (raw IP addresses are never stored).
+Admin routes (usage and cost totals, cache clear, manual collect) exist only when `WX_ADMIN_TOKEN` is set and require it as a bearer token. Anonymous visits are counted via an ephemeral `X-Session-ID` client UUID header/cookie (24h expiry); daily unique visitors use a daily-salted one-way cryptographic hash of client subnet/User-Agent (raw IP addresses are never stored).
 
 ## Limits and guards
 

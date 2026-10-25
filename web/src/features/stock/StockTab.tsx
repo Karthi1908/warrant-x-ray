@@ -15,20 +15,43 @@ import {
 export interface StockTabProps {
   initialTicker?: string;
   onInspectWarrant?: (code: string) => void;
+  onSimulateWarrant?: (code: string) => void;
   onCompareWarrants?: (codes: string[]) => void;
   className?: string;
 }
 
-const POPULAR_TICKERS = ['MAYBANK', 'CIMB', 'TENAGA', 'PCHEM', 'INARI', 'YTL'];
+const POPULAR_TICKERS = [
+  'MAYBANK',
+  'TENAGA',
+  'PBBANK',
+  'CIMB',
+  'IHH',
+  'CELCOMDIGI',
+  'PCHEM',
+  'INARI',
+  'YTL',
+  'YTLPOWR',
+  'GAMUDA',
+  'SUNWAY',
+];
+
+interface UnderlyingOption {
+  ticker: string;
+  code?: string;
+  name?: string;
+  total_warrants?: number;
+}
 
 export const StockTab: React.FC<StockTabProps> = ({
   initialTicker = 'MAYBANK',
   onInspectWarrant,
+  onSimulateWarrant,
   onCompareWarrants,
   className,
 }) => {
   const [ticker, setTicker] = useState(initialTicker);
   const [searchInput, setSearchInput] = useState(initialTicker);
+  const [allUnderlyings, setAllUnderlyings] = useState<UnderlyingOption[]>([]);
   const [typeFilter, setTypeFilter] = useState<'all' | 'call' | 'put'>('all');
   const [selectedIssuer, setSelectedIssuer] = useState<string>('all');
   const [moneynessFilter, setMoneynessFilter] = useState<'all' | 'itm' | 'atm' | 'otm'>('all');
@@ -41,6 +64,28 @@ export const StockTab: React.FC<StockTabProps> = ({
   const [selectedCodes, setSelectedCodes] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load all 50+ underlyings for selector dropdown
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnderlyings = async () => {
+      try {
+        const resp = await fetch('/api/underlyings');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (mounted && Array.isArray(data.underlyings)) {
+            setAllUnderlyings(data.underlyings);
+          }
+        }
+      } catch {
+        // fallback
+      }
+    };
+    fetchUnderlyings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Sync external ticker changes (e.g. from MarketTickerRibbon)
   useEffect(() => {
@@ -159,24 +204,42 @@ export const StockTab: React.FC<StockTabProps> = ({
     <div className={cn('space-y-6', className)}>
       {/* Ticker Selector Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs">
-        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 max-w-sm">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Enter Stock Ticker (e.g. MAYBANK)"
-              className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs font-mono font-medium text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
-          >
-            Find
-          </button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2 flex-1 max-w-xl">
+          <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Search Ticker (e.g. PBBANK, GAMUDA)"
+                className="w-full rounded-lg border border-border bg-background py-1.5 pl-8 pr-3 text-xs font-mono font-medium text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
+              />
+            </div>
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-xs"
+            >
+              Find
+            </button>
+          </form>
+
+          {allUnderlyings.length > 0 && (
+            <select
+              value={ticker}
+              aria-label="Select Underlying Company"
+              onChange={(e) => handleTickerSelect(e.target.value)}
+              className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-mono font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs"
+            >
+              <option value="" disabled>Choose from {allUnderlyings.length} Companies...</option>
+              {allUnderlyings.map((u) => (
+                <option key={u.ticker} value={u.ticker}>
+                  {u.ticker} - {u.name || u.ticker} ({u.total_warrants || 10} warrants)
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
 
         {/* Quick Tickers */}
         <div className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -417,6 +480,7 @@ export const StockTab: React.FC<StockTabProps> = ({
           selectedCodes={selectedCodes}
           onToggleSelect={handleToggleSelect}
           onInspect={onInspectWarrant}
+          onSimulate={onSimulateWarrant}
           sortField={sortField}
           sortOrder={sortOrder}
           onSortChange={handleSortChange}

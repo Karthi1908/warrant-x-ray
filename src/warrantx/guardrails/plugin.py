@@ -19,8 +19,22 @@ _REASONING_TRACE_PATTERN = re.compile(r"<\s*think\s*>.*?<\s*/\s*think\s*>", re.D
 
 
 def strip_reasoning_traces(text: str) -> str:
-    """Eliminate reasoning blocks (<think>...</think>) from draft response text."""
-    return _REASONING_TRACE_PATTERN.sub("", text).strip()
+    """Eliminate reasoning blocks (<think>...</think>) and preamble traces from draft response text."""
+    cleaned = _REASONING_TRACE_PATTERN.sub("", text).strip()
+    # Strip conversational reasoning preambles (e.g. "We need to answer: ... Let's craft.")
+    craft_match = re.search(
+        r"(?:let'?s\s+(?:craft|write|answer|respond|begin)[^\n]*\n+|let'?s\s+craft\s*\.?\s*)",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if craft_match:
+        cleaned = cleaned[craft_match.end():].strip()
+    elif cleaned.startswith("We need to answer:") or cleaned.startswith("We need to:"):
+        # Find first markdown header or blank line separation
+        parts = re.split(r"\n\s*\n", cleaned, maxsplit=1)
+        if len(parts) > 1 and ("**" in parts[1] or "#" in parts[1]):
+            cleaned = parts[1].strip()
+    return cleaned
 
 
 class GuardrailPlugin:

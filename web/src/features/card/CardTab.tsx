@@ -15,17 +15,23 @@ import {
   Layers,
   Activity,
   BadgeAlert,
+  Sliders,
+  GitCompare,
 } from 'lucide-react';
 
 export interface CardTabProps {
   card: WarrantCardData;
   onHoldingDaysChange?: (days: number) => void;
+  onSimulate?: (code: string) => void;
+  onCompare?: (code: string) => void;
   className?: string;
 }
 
 export const CardTab: React.FC<CardTabProps> = ({
   card,
   onHoldingDaysChange,
+  onSimulate,
+  onCompare,
   className,
 }) => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -115,7 +121,7 @@ export const CardTab: React.FC<CardTabProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-2 text-right">
+          <div className="flex items-center gap-3 text-right">
             <div>
               <span className="block text-[10px] text-muted-foreground uppercase tracking-wider">
                 Underlying {card.underlying_ticker}
@@ -124,6 +130,30 @@ export const CardTab: React.FC<CardTabProps> = ({
                 {card.display_underlying_price || '—'}
               </span>
             </div>
+            {(onSimulate || onCompare) && (
+              <div className="flex items-center gap-2 pl-3 border-l border-border/60">
+                {onSimulate && (
+                  <button
+                    type="button"
+                    onClick={() => onSimulate(card.code)}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    <Sliders className="h-3.5 w-3.5" />
+                    <span>Simulate</span>
+                  </button>
+                )}
+                {onCompare && (
+                  <button
+                    type="button"
+                    onClick={() => onCompare(card.code)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/60 hover:bg-muted text-foreground px-3 py-1.5 text-xs font-semibold transition-colors"
+                  >
+                    <GitCompare className="h-3.5 w-3.5" />
+                    <span>Compare</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

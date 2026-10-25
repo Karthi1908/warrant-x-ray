@@ -12,16 +12,51 @@ import { NewsItemCard, type NewsItemModel } from './NewsItemCard';
 import { EvidenceRecord, type EvidencePayload } from './EvidenceRecord';
 import { ExternalLinkModal } from './ExternalLinkModal';
 
-const PRESET_TICKERS = ['MAYBANK', 'TENAGA', 'PBBANK', 'INARI'];
+const PRESET_TICKERS = [
+  'MAYBANK',
+  'TENAGA',
+  'PBBANK',
+  'CIMB',
+  'IHH',
+  'CELCOMDIGI',
+  'PCHEM',
+  'INARI',
+  'YTL',
+  'GAMUDA',
+  'SUNWAY',
+  'BURSA',
+];
 
 export const SourcesTab: React.FC = () => {
   const [selectedTicker, setSelectedTicker] = useState('MAYBANK');
   const [queryInput, setQueryInput] = useState('');
+  const [allUnderlyings, setAllUnderlyings] = useState<string[]>([]);
   const [news, setNews] = useState<NewsItemModel[]>([]);
   const [evidence, setEvidence] = useState<EvidencePayload | null>(null);
   const [mode, setMode] = useState('sample');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchUnderlyings = async () => {
+      try {
+        const resp = await fetch('/api/underlyings');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (mounted && Array.isArray(data.underlyings)) {
+            setAllUnderlyings(data.underlyings.map((u: any) => u.ticker));
+          }
+        }
+      } catch {
+        // fallback
+      }
+    };
+    fetchUnderlyings();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // External link modal state
   const [modalOpen, setModalOpen] = useState(false);
@@ -123,7 +158,25 @@ export const SourcesTab: React.FC = () => {
           </div>
 
           <form onSubmit={handleSearchSubmit} className="flex items-center space-x-1.5 w-full md:w-auto">
-            <div className="relative flex-1 md:w-48">
+            {allUnderlyings.length > 0 && (
+              <select
+                value={selectedTicker}
+                aria-label="Select company news"
+                onChange={(e) => {
+                  setSelectedTicker(e.target.value);
+                  setQueryInput('');
+                }}
+                className="rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-mono font-semibold text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs"
+              >
+                <option value="" disabled>All 58 Companies...</option>
+                {allUnderlyings.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="relative flex-1 md:w-40">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 type="text"

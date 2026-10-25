@@ -47,6 +47,10 @@ export const ScenarioTab: React.FC<ScenarioTabProps> = ({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchScenario = async (vals: ScenarioValues) => {
+    if (!warrantCode) {
+      return;
+    }
+
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -70,7 +74,18 @@ export const ScenarioTab: React.FC<ScenarioTabProps> = ({
       });
 
       if (!resp.ok) {
-        throw new Error(`Scenario calculation failed: ${resp.status}`);
+        let msg = `Scenario calculation failed (${resp.status})`;
+        try {
+          const errData = await resp.json();
+          if (errData?.error?.message) {
+            msg = errData.error.message;
+          } else if (errData?.message) {
+            msg = errData.message;
+          }
+        } catch {
+          // use fallback msg
+        }
+        throw new Error(msg);
       }
 
       const data = await resp.json();

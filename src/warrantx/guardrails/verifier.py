@@ -83,6 +83,19 @@ def verify_grounding(
     numeric_values: Collection[float] | None = None,
 ) -> GroundingResult:
     """Verify that every number in text matches the allowlist or numeric values."""
+    # 0. Normalize unicode characters (non-breaking spaces, unicode hyphens, minuses)
+    working_text = (
+        text.replace("\u202f", " ")
+        .replace("\u00a0", " ")
+        .replace("\u2011", "-")
+        .replace("\u2010", "-")
+        .replace("\u2012", "-")
+        .replace("\u2013", "-")
+        .replace("\u2014", "-")
+        .replace("\u2015", "-")
+        .replace("\u2212", "-")
+    )
+
     cleaned_allowlist = {s.strip().lower() for s in allowlist if s}
     numeric_targets = list(numeric_values) if numeric_values else []
 
@@ -92,27 +105,28 @@ def verify_grounding(
         if v is not None:
             numeric_targets.append(v)
 
-    # 1. Check and mask ISO dates like 2026-06-30
-    working_text = text
-    dates_found = re.findall(r"\b\d{4}-\d{2}-\d{2}\b", working_text)
-    ungrounded = []
-    verified = []
-
-    for d in dates_found:
-        if d.lower() in cleaned_allowlist or True:  # Standard dates from calendar/snapshot
-            verified.append(d)
-        else:
-            ungrounded.append(d)
-    working_text = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", " __DATE__ ", working_text)
+    # 1. Check and mask dates in all formats
+    working_text = re.sub(r"\b\d{4}[-/]\d{1,2}[-/]\d{1,2}\b", " __DATE__ ", working_text)
+    working_text = re.sub(
+        r"\b(?:\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{4})\b",
+        " __DATE__ ",
+        working_text,
+        flags=re.IGNORECASE,
+    )
 
     # 2. Mask citations like [E1] or [E1, E2]
     working_text = re.sub(r"\[E\d+(?:,\s*E\d+)*\]", " __CITATION__ ", working_text)
 
+    # 3. Mask alphanumeric warrant codes (e.g. 1155A1, 115510, 0166A1)
+    working_text = re.sub(r"\b\d{4}[A-Za-z0-9]{1,4}\b", " __CODE__ ", working_text)
+
     raw_tokens = _NUMBER_PATTERN.findall(working_text)
+    ungrounded = []
+    verified = []
 
     for raw in raw_tokens:
         tok = _clean_token(raw)
-        if not tok or tok in ("__DATE__", "__CITATION__"):
+        if not tok or tok in ("__DATE__", "__CITATION__", "__CODE__"):
             continue
 
         # Skip dates like 2026-06-30
@@ -165,7 +179,12 @@ def strip_and_note(
     omitted = False
 
     for sent in sentences:
-        has_ungrounded = any(tok in sent for tok in ungrounded_tokens)
+        has_ungrounded = False
+        for tok in ungrounded_tokens:
+            pattern = rf"(?<![\w.]){re.escape(tok)}(?![\w.])"
+            if re.search(pattern, sent):
+                has_ungrounded = True
+                break
         if has_ungrounded:
             omitted = True
         else:

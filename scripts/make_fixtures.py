@@ -30,15 +30,112 @@ def generate_synthetic_fixture(as_of_date: date | None = None) -> dict[str, Any]
     ).isoformat()
 
     underlyings = [
+        # Banking & Financial Services
         {"ticker": "MAYBANK", "code": "1155", "name": "Malayan Banking Berhad", "price": 10.50},
-        {"ticker": "TENAGA", "code": "5347", "name": "Tenaga Nasional Berhad", "price": 14.20},
-        {"ticker": "INARI", "code": "0166", "name": "Inari Amertron Berhad", "price": 3.80},
-        {"ticker": "YTL", "code": "4677", "name": "YTL Corporation Berhad", "price": 3.40},
+        {"ticker": "PBBANK", "code": "1295", "name": "Public Bank Berhad", "price": 4.50},
         {"ticker": "CIMB", "code": "1023", "name": "CIMB Group Holdings Berhad", "price": 8.10},
+        {"ticker": "HLBANK", "code": "5819", "name": "Hong Leong Bank Berhad", "price": 20.80},
+        {"ticker": "RHBBANK", "code": "1066", "name": "RHB Bank Berhad", "price": 6.45},
+        {"ticker": "AMBANK", "code": "1015", "name": "AMMB Holdings Berhad", "price": 5.15},
+        {"ticker": "BURSA", "code": "1818", "name": "Bursa Malaysia Berhad", "price": 9.30},
+        {"ticker": "HLFG", "code": "1082", "name": "Hong Leong Financial Group Berhad", "price": 18.20},
+
+        # Utilities & Infrastructure
+        {"ticker": "TENAGA", "code": "5347", "name": "Tenaga Nasional Berhad", "price": 14.20},
+        {"ticker": "YTL", "code": "4677", "name": "YTL Corporation Berhad", "price": 3.40},
+        {"ticker": "YTLPOWR", "code": "6742", "name": "YTL Power International Berhad", "price": 4.80},
+        {"ticker": "PETGAS", "code": "6033", "name": "Petronas Gas Berhad", "price": 18.00},
+        {"ticker": "GASMSIA", "code": "5209", "name": "Gas Malaysia Berhad", "price": 3.65},
+        {"ticker": "TIMECOM", "code": "5031", "name": "TIME dotCom Berhad", "price": 5.00},
+
+        # Technology & Semiconductor
+        {"ticker": "INARI", "code": "0166", "name": "Inari Amertron Berhad", "price": 3.80},
+        {"ticker": "MYEG", "code": "0138", "name": "MyEG Services Berhad", "price": 0.90},
+        {"ticker": "CTOS", "code": "5301", "name": "CTOS Digital Berhad", "price": 1.30},
+        {"ticker": "FRONTKN", "code": "0128", "name": "Frontken Corporation Berhad", "price": 4.10},
+        {"ticker": "GREATEC", "code": "0208", "name": "Greatech Technology Berhad", "price": 4.80},
+        {"ticker": "D&O", "code": "7204", "name": "D&O Green Technologies Berhad", "price": 2.50},
+        {"ticker": "VS", "code": "6963", "name": "V.S. Industry Berhad", "price": 1.15},
+        {"ticker": "UNISEM", "code": "5005", "name": "Unisem (M) Berhad", "price": 3.40},
+
+        # Energy & Oil & Gas
+        {"ticker": "DIALOG", "code": "7277", "name": "Dialog Group Berhad", "price": 2.15},
+        {"ticker": "HIBISCS", "code": "5199", "name": "Hibiscus Petroleum Berhad", "price": 2.20},
+        {"ticker": "DAYANG", "code": "5141", "name": "Dayang Enterprise Holdings Berhad", "price": 2.40},
+        {"ticker": "ARMADA", "code": "5210", "name": "Bumi Armada Berhad", "price": 0.55},
+        {"ticker": "VELESTO", "code": "5243", "name": "Velesto Energy Berhad", "price": 0.20},
+        {"ticker": "YINSON", "code": "7293", "name": "Yinson Holdings Berhad", "price": 2.70},
+
+        # Plantations & Commodities
+        {"ticker": "SIMEPLT", "code": "5285", "name": "SD Guthrie Berhad", "price": 4.60},
+        {"ticker": "IOICORP", "code": "1961", "name": "IOI Corporation Berhad", "price": 3.90},
+        {"ticker": "KLK", "code": "2445", "name": "Kuala Lumpur Kepong Berhad", "price": 21.50},
+        {"ticker": "FGV", "code": "5222", "name": "FGV Holdings Berhad", "price": 1.25},
+        {"ticker": "GENP", "code": "2291", "name": "Genting Plantations Berhad", "price": 5.60},
+        {"ticker": "TAANN", "code": "5012", "name": "Ta Ann Holdings Berhad", "price": 4.10},
+
+        # Telecommunications & Media
+        {"ticker": "CELCOMDIGI", "code": "6947", "name": "CelcomDigi Berhad", "price": 3.75},
+        {"ticker": "MAXIS", "code": "6012", "name": "Maxis Berhad", "price": 3.60},
+        {"ticker": "AXIATA", "code": "6888", "name": "Axiata Group Berhad", "price": 2.40},
+        {"ticker": "TM", "code": "4863", "name": "Telekom Malaysia Berhad", "price": 6.70},
+        {"ticker": "ASTRO", "code": "6399", "name": "Astro Malaysia Holdings Berhad", "price": 0.28},
+
+        # Construction, Property & Building Materials
+        {"ticker": "GAMUDA", "code": "5398", "name": "Gamuda Berhad", "price": 8.80},
+        {"ticker": "SUNWAY", "code": "5211", "name": "Sunway Berhad", "price": 4.50},
+        {"ticker": "IJM", "code": "3336", "name": "IJM Corporation Berhad", "price": 3.10},
+        {"ticker": "PMETAL", "code": "8869", "name": "Press Metal Aluminium Holdings Berhad", "price": 5.20},
+        {"ticker": "SPSETIA", "code": "8664", "name": "S P Setia Berhad", "price": 1.35},
+        {"ticker": "ECOWLD", "code": "8206", "name": "Eco World Development Group Berhad", "price": 1.75},
+        {"ticker": "UEMS", "code": "5148", "name": "UEM Sunrise Berhad", "price": 1.05},
+        {"ticker": "MAHSING", "code": "8583", "name": "Mah Sing Group Berhad", "price": 1.65},
+
+        # Healthcare, Consumer, Aviation & Industrial
+        {"ticker": "IHH", "code": "5225", "name": "IHH Healthcare Berhad", "price": 7.25},
+        {"ticker": "KPJ", "code": "5878", "name": "KPJ Healthcare Berhad", "price": 2.10},
+        {"ticker": "TOPGLOV", "code": "7113", "name": "Top Glove Corporation Bhd", "price": 1.05},
+        {"ticker": "HARTA", "code": "5168", "name": "Hartalega Holdings Berhad", "price": 3.30},
+        {"ticker": "MRDIY", "code": "5296", "name": "MR D.I.Y. Group (M) Berhad", "price": 2.10},
+        {"ticker": "GENTING", "code": "3182", "name": "Genting Berhad", "price": 4.20},
+        {"ticker": "GENM", "code": "4715", "name": "Genting Malaysia Berhad", "price": 2.45},
+        {"ticker": "AIRASIA", "code": "5099", "name": "Capital A Berhad", "price": 0.98},
+        {"ticker": "PCHEM", "code": "5183", "name": "Petronas Chemicals Group Berhad", "price": 5.60},
+        {"ticker": "MISC", "code": "3816", "name": "MISC Berhad", "price": 8.10},
+        {"ticker": "WESTPORTS", "code": "5246", "name": "Westports Holdings Berhad", "price": 4.30},
     ]
 
     issuers = ["CGS", "RHB", "KENANGA", "MBSB", "MACQUARIE"]
     rows: list[dict[str, Any]] = []
+
+    # Benchmark / Sample Warrant (115510, MAYBANK-C28)
+    rows.append({
+        "code": "115510",
+        "issuer": "CGS",
+        "type": "call",
+        "underlying_ticker": "MAYBANK",
+        "expiry_date": "2027-06-30",
+        "strike": 10.50,
+        "ratio_raw": 4.0,
+        "underlying_bid": 10.20,
+        "bid": 0.150,
+        "ask": 0.155,
+        "bid_volume": 120000,
+        "ask_volume": 150000,
+        "traded_volume": 250000,
+        "last_price": 0.152,
+        "last_time": "09:30:00",
+        "issuer_iv": 42.5,
+        "issuer_eg": 5.2,
+        "issuer_delta": 0.52,
+        "issuer_premium": 8.5,
+        "issuer_theta_raw": -0.002,
+        "sensitivity_ticks": 1.1,
+        "moneyness": round(10.20 / 10.50, 4),
+        "indicators": {"active": True, "liquidity": True},
+        "valid": True,
+        "raw_json": {"source": "synthetic_generator", "note": "canonical_sample_warrant"},
+    })
 
     # 1. Normal warrants across underlyings
     counter = 100

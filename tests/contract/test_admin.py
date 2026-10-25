@@ -162,3 +162,62 @@ def test_admin_budget_reset_authorized():
         data = resp.json()
         assert data["status"] == "reset"
         assert data["budget"]["used_usd"] == 0.0
+
+
+def test_admin_metrics_includes_tavily_crawl():
+    """GET /api/admin/metrics returns Tavily crawl budget metrics (FR-020)."""
+    settings = Settings(admin_token="super_secret_admin_token", tavily_crawl_credit_limit=50)
+    app = create_app(settings=settings)
+    with TestClient(app) as client:
+        repo = app.state.repo
+
+        async def _seed_crawl_spend():
+            today = get_malaysia_today()
+            await repo.record_budget_spend(day=today, kind="tavily_crawl_credits", amount=3.0)
+
+        asyncio.run(_seed_crawl_spend())
+
+        resp = client.get(
+            "/api/admin/metrics",
+            headers={"Authorization": "Bearer super_secret_admin_token"},
+        )
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "tavily_crawl" in data
+        assert data["tavily_crawl"]["used_credits"] == 3
+        assert data["tavily_crawl"]["limit_credits"] == 50
+        assert data["tavily_crawl"]["remaining_credits"] == 47
+        assert data["tavily_crawl"]["is_exhausted"] is False
+
+
+def test_admin_collect_endpoint():
+    """POST /api/admin/collect triggers collection cycle with auth (T121, FR-020)."""
+    from unittest.mock import AsyncMock, patch
+
+    settings = Settings(admin_token="super_secret_admin_token")
+    app = create_app(settings=settings)
+    with TestClient(app) as client:
+        # Unauthorized without token
+        unauth = client.post("/api/admin/collect", json={})
+        assert unauth.status_code == 401
+
+        with patch("warrantx.data.collector.Collector.run_collection_cycle", new_callable=AsyncMock) as mock_run:
+            mock_run.return_value = {
+                "status": "success",
+                "snapshot_id": 42,
+                "collector_source": "tavily_crawl",
+                "row_count": 250,
+                "suspect": False,
+            }
+
+            resp = client.post(
+                "/api/admin/collect",
+                headers={"Authorization": "Bearer super_secret_admin_token"},
+                json={"source": "tavily_crawl"},
+            )
+            assert resp.status_code == 200
+            data = resp.json()
+            assert data["status"] == "success"
+            assert data["collector_source"] == "tavily_crawl"
+            assert data["snapshot_id"] == 42
+

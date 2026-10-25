@@ -87,22 +87,28 @@ def get_model(
 
     try:
         from google.adk.models.lite_llm import LiteLlm
-        llm = LiteLlm(
+        from google.adk.models import LlmRequest
+
+        class WarrantXLlm(LiteLlm):
+            """Subclass of LiteLlm providing generate() and wrapping Content into LlmRequest."""
+
+            async def generate(self, req: Any) -> Any:
+                if not hasattr(req, "contents"):
+                    if isinstance(req, list):
+                        req = LlmRequest(contents=req)
+                    else:
+                        req = LlmRequest(contents=[req])
+                last_resp = None
+                async for chunk in self.generate_content_async(req):
+                    last_resp = chunk
+                return last_resp
+
+        return WarrantXLlm(
             model=f"openai/{target_model}",
             api_base=settings.NEBIUS_BASE_URL,
             api_key=settings.NEBIUS_API_KEY,
             temperature=0.0,
         )
-        if not hasattr(llm, "generate"):
-            async def _generate(req: Any) -> Any:
-                from google.genai.types import Content, Part
-                from google.adk.models import LlmResponse
-                last_resp = LlmResponse(content=Content(parts=[]))
-                async for chunk in llm.generate_content_async(req):
-                    last_resp = chunk
-                return last_resp
-            setattr(llm, "generate", _generate)
-        return llm
     except Exception:
         # Fallback to FakeLlm if LiteLlm is not importable or fails
         return FakeLlm(scripted_calls=mock_scenarios or [])

@@ -8,6 +8,7 @@ import {
   ShieldAlert,
   Search,
   ExternalLink,
+  Sliders,
 } from 'lucide-react';
 
 export type SortField =
@@ -22,6 +23,7 @@ export interface WarrantTableProps {
   selectedCodes: string[];
   onToggleSelect: (code: string) => void;
   onInspect?: (code: string) => void;
+  onSimulate?: (code: string) => void;
   sortField: SortField;
   sortOrder: 'asc' | 'desc';
   onSortChange: (field: SortField) => void;
@@ -34,6 +36,7 @@ export const WarrantTable: React.FC<WarrantTableProps> = ({
   selectedCodes,
   onToggleSelect,
   onInspect,
+  onSimulate,
   sortField,
   sortOrder,
   onSortChange,
@@ -224,18 +227,31 @@ export const WarrantTable: React.FC<WarrantTableProps> = ({
                       <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Clean</span>
                     )}
                   </td>
-                  <td className="py-2.5 px-3 text-center">
-                    {onInspect && (
-                      <button
-                        type="button"
-                        onClick={() => onInspect(w.code)}
-                        title={`Inspect ${w.code} on Warrant Card`}
-                        className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-primary hover:text-primary-foreground text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[11px] font-semibold transition-all shadow-2xs border border-indigo-200/60 dark:border-indigo-800/40"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                        <span>View</span>
-                      </button>
-                    )}
+                  <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                    <div className="flex items-center justify-center gap-1.5">
+                      {onInspect && (
+                        <button
+                          type="button"
+                          onClick={() => onInspect(w.code)}
+                          title={`Inspect ${w.code} on Warrant Card`}
+                          className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-primary hover:text-primary-foreground text-indigo-600 dark:text-indigo-400 px-2 py-1 text-[11px] font-semibold transition-all shadow-2xs border border-indigo-200/60 dark:border-indigo-800/40"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          <span>View</span>
+                        </button>
+                      )}
+                      {onSimulate && (
+                        <button
+                          type="button"
+                          onClick={() => onSimulate(w.code)}
+                          title={`Simulate payoff for ${w.code}`}
+                          className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-600 hover:text-white text-emerald-600 dark:text-emerald-400 px-2 py-1 text-[11px] font-semibold transition-all shadow-2xs border border-emerald-200/60 dark:border-emerald-800/40"
+                        >
+                          <Sliders className="h-3 w-3" />
+                          <span>Simulate</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

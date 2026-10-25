@@ -11,6 +11,7 @@ Derived from the spec's Key Entities, [requirements.md](../../requirements.md) S
 | fetched_at | datetime UTC | |
 | source_last_update | datetime \| null | Source's own time |
 | row_count | int | |
+| collector_source | string | `'tavily_crawl'` \| `'direct_screener'` \| `'stored_replay'` \| `'synthetic_sample'` |
 | ok | bool | Failed fetches recorded but never become current |
 | note | text | |
 | quality_json | json | null rates, crossed quotes, duplicates, row-count change, `suspect` flag, ratio-check share |
@@ -35,7 +36,7 @@ id (e.g. `E3`), turn_id, kind (`snapshot`|`metrics`|`card`|`scenario`|`news`|`he
 ts, turn_id, session_hash, model, tier, purpose, in/out/reasoning tokens, latency_ms, cost_usd, status. No personal data or raw IPs (FR-CTRL-03).
 
 ### Budget
-`(day, kind)` PK, used. kind in `llm_usd`, `tavily_credits`; day is the Malaysia date; atomic updates.
+`(day, kind)` PK, used. kind in `llm_usd`, `tavily_credits`, `tavily_crawl_credits`; day is the Malaysia date; atomic updates. Enforces 50-credit ceiling on crawl runs and 150-credit reserve for interactive news.
 
 ### UsageMetrics
 `day` (PK, YYYY-MM-DD in Malaysia time), `visit_count` (int), `unique_visitor_count` (int, computed via daily-salted one-way cryptographic hash of client subnet/User-Agent; raw IP addresses are never stored), `interactive_query_count` (int, sum of chat turns, scenario simulations, and explain-move requests). Publicly exposed via `GET /api/meta` and the Data Health tab; detailed breakdown via `GET /api/admin/metrics` (FR-020, FR-023).

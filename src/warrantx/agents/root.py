@@ -24,7 +24,7 @@ from warrantx.guardrails.injection import detect_prompt_injection
 from warrantx.guardrails.intent import check_advice_intent
 from warrantx.guardrails.linter import check_advice_linter
 from warrantx.guardrails.plugin import GuardrailPlugin, strip_reasoning_traces
-from warrantx.guardrails.templates import get_disclaimer, get_refusal
+from warrantx.guardrails.templates import get_disclaimer, get_omission_note, get_refusal
 from warrantx.guardrails.verifier import strip_and_note, verify_grounding
 from warrantx.llm.usage import record_usage
 from warrantx.tools.evidence import Evidence
@@ -155,12 +155,25 @@ class RootAgent:
         # Prepare ADK request
         prompt_text = message
         if evidence_items:
+            first_ev = evidence_items[0]
+            card = first_ev.payload
             prompt_text = (
-                f"User Question: {message}\n"
-                f"Verified Evidence:\n"
-                + "\n".join([f"[{e.id}] {e.summary} (Allowlist numbers: {list(e.allowlist)[:10]})" for e in evidence_items])
-                + "\nExplain the warrant metrics and holding costs citing evidence tags like [E1]. "
-                "Answer directly first, then quotes & Greeks, then holding costs and break-even move. No financial advice."
+                f"You are Warrant X-Ray Risk Copilot. Provide an objective, mathematical risk assessment.\n"
+                f"User Question: {message}\n\n"
+                f"Verified Warrant Evidence [{first_ev.id}]:\n"
+                f"- Code: {card.get('code')} ({card.get('issuer')} on {card.get('underlying_ticker')} {card.get('type', '').upper()})\n"
+                f"- Underlying Price: {card.get('display_underlying_price')}\n"
+                f"- Strike: {card.get('display_strike')} | Expiry: {card.get('expiry_date')} ({card.get('metrics', {}).get('display_days_to_expiry')})\n"
+                f"- Bid / Ask: {card.get('display_bid')} / {card.get('display_ask')}\n"
+                f"- Implied Volatility: {card.get('metrics', {}).get('display_headline_iv')}\n"
+                f"- Effective Gearing: {card.get('metrics', {}).get('display_effective_gearing')} | Delta: {card.get('metrics', {}).get('display_delta_share')}\n"
+                f"- Spread Cost: {card.get('presets', {}).get('display_spread_cost')} | Theta Decay: {card.get('metrics', {}).get('display_theta_per_day')}/day\n"
+                f"- 5-day Flat Decay: {card.get('presets', {}).get('display_flat_decay')} | Break-even Move: {card.get('presets', {}).get('display_breakeven_move')}\n\n"
+                f"Instructions:\n"
+                f"1. Begin immediately with your response text. Never output internal thought preambles (do NOT write 'We need to answer', 'Let's craft').\n"
+                f"2. Cite [{first_ev.id}] when stating prices, strike, and Greeks.\n"
+                f"3. Explain the holding cost (spread friction + theta decay) and break-even move.\n"
+                f"4. Give NO investment, buy, sell, or hold advice.\n"
             )
 
         req = LlmRequest(
@@ -302,6 +315,8 @@ class RootAgent:
             draft_text = ""
             if resp.content and resp.content.parts:
                 for part in resp.content.parts:
+                    if getattr(part, "thought", False):
+                        continue
                     txt = getattr(part, "text", None)
                     if txt:
                         draft_text += txt
@@ -340,6 +355,8 @@ class RootAgent:
             retry_draft = ""
             if resp.content and resp.content.parts:
                 for part in resp.content.parts:
+                    if getattr(part, "thought", False):
+                        continue
                     txt = getattr(part, "text", None)
                     if txt:
                         retry_draft += txt
@@ -358,6 +375,45 @@ class RootAgent:
                     ungrounded_tokens=retry_res.ungrounded_tokens,
                     lang=lang,
                 )
+
+        # If strip_and_note removed all substantive content, fallback to factual card explanation
+        omission_note = get_omission_note(lang)
+        if (not final_draft or final_draft.strip() == omission_note.strip()) and evidence_items:
+            first_ev = evidence_items[0]
+            card = first_ev.payload
+            metrics = card.get("metrics", {})
+            presets = card.get("presets", {})
+            und_price = card.get("display_underlying_price") or f"RM {card.get('underlying_price', 0):.2f}"
+            bid_str = card.get("display_bid") or f"RM {card.get('bid', 0):.3f}"
+            ask_str = card.get("display_ask") or f"RM {card.get('ask', 0):.3f}"
+            strike_str = card.get("display_strike") or f"RM {card.get('strike', 0):.2f}"
+            days_str = metrics.get("display_days_to_expiry") or f"{metrics.get('days_to_expiry', 0)} days"
+            iv_str = metrics.get("display_headline_iv") or "N/A"
+            eg_str = metrics.get("display_effective_gearing") or f"{metrics.get('effective_gearing', 0):.2f}x"
+            delta_str = metrics.get("display_delta_share") or f"{metrics.get('delta_share', 0):.3f}"
+            spread_str = presets.get("display_spread_cost") or metrics.get("display_spread_pct") or "N/A"
+            decay_str = metrics.get("display_theta_per_day") or "N/A"
+            flat_decay_str = presets.get("display_flat_decay") or "N/A"
+            be_move_str = presets.get("display_breakeven_move") or metrics.get("display_required_move") or "N/A"
+
+            final_draft = (
+                f"Warrant **{card.get('code')}** ({card.get('issuer')} {card.get('underlying_ticker')} {card.get('type', '').upper()}) "
+                f"is quoted at bid **{bid_str}** / ask **{ask_str}** against underlying at **{und_price}** [{first_ev.id}].\n\n"
+                f"### Key Quotes & Greeks [{first_ev.id}]\n"
+                f"- **Strike**: {strike_str} | **Expiry**: {days_str}\n"
+                f"- **Implied Volatility (IV)**: {iv_str} ({metrics.get('headline_iv_basis', 'mid')} basis)\n"
+                f"- **Effective Gearing**: {eg_str} | **Delta**: {delta_str}\n\n"
+                f"### Holding Cost Analysis ({card.get('holding_days', 5)}-day holding period)\n"
+                f"- **Spread Friction**: {spread_str} entry cost\n"
+                f"- **Time Decay (Theta)**: ~{decay_str}/day ({flat_decay_str} projected flat decay over {card.get('holding_days', 5)} days)\n\n"
+                f"### What Has to Go Right\n"
+                f"The underlying must move by at least **{be_move_str}** within {card.get('holding_days', 5)} days "
+                f"to cover spread friction and time decay."
+            )
+            flags = card.get("flags", [])
+            if flags:
+                flag_texts = [f"- ⚠️ **{f.get('code')}**: {f.get('text')}" for f in flags]
+                final_draft += f"\n\n### Risk Flags [{first_ev.id}]\n" + "\n".join(flag_texts)
 
         # 7. Append mandatory disclaimer
         disclaimer = get_disclaimer(lang)

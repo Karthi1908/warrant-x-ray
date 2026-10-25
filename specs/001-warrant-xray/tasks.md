@@ -258,6 +258,25 @@
 
 ---
 
+## Phase 12: Tavily Crawling & Deterministic Extraction (Extension to US4 & US8)
+
+**Goal**: Implement Tavily web crawler for warrant market data collection with deterministic Python parsing, 50-credit daily budget capping, scheduled 2-3 runs/day (open, midday, close), and direct screener fallback.
+**Independent Test**: Run collector with `WX_TAVILY_CRAWL=true` in live mode; verify snapshot is created with `collector_source="tavily_crawl"`, credits tracked in `Budget` (≤50), and deterministic parsing passes all quality checks without LLM extraction.
+
+### Tests for Tavily Crawling (write FIRST, must FAIL)
+
+- [X] T116 [P] [US4] Unit tests for deterministic HTML warrant table parser (zero LLM, golden extraction, null handling) in `tests/unit/data/test_html_parser.py` (FR-007, Principle I)
+- [X] T117 [P] [US4] Integration tests for Tavily crawler client, credit cap enforcement (50 credits/day), and automatic fallback to direct screener in `tests/integration/test_tavily_crawler.py` (FR-007, FR-020)
+
+### Implementation for Tavily Crawling
+
+- [X] T118 [P] [US4] Implement deterministic HTML warrant table parser using BeautifulSoup in `src/warrantx/data/html_parser.py` (FR-007, Principle I)
+- [X] T119 [US4] Implement Tavily web crawler client with 50-credit ceiling in `src/warrantx/data/tavily_crawler.py` (FR-007, FR-020)
+- [X] T120 [US4] Update collector in `src/warrantx/data/collector.py` to default to Tavily web crawling (2–3 runs/day) with direct screener fallback, recording `collector_source` on `WarrantSnapshot` (FR-007)
+- [X] T121 [US8] Add `POST /api/admin/collect` endpoint and crawl credit tracking to `GET /api/admin/metrics` in `src/warrantx/api/routes/admin.py` (FR-020, FR-023)
+
+---
+
 ## Dependencies and Execution Order
 
 ### Phase dependencies
@@ -270,6 +289,7 @@
 - **US5 (7)** needs T053 to T055 (Nano client) and T087 gateway; replay storage needs US4 repo.
 - **US6 (8)** needs US1; **US8 (9)** needs US2; **US7 (10)** needs US2, US3.
 - **Polish (11)** needs the desired stories done.
+- **Tavily Crawling (12)** extends US4 and US8; builds on existing collector repo and Tavily gateway.
 
 ### Within each story
 

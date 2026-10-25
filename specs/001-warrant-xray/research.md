@@ -101,9 +101,14 @@ None remain in the plan's Technical Context as blocking design. All unknowns are
 - **Rationale**: Balances regulatory safety (zero financial advice in any supported language) with MVP implementation scope (FR-017, SC-002).
 - **Alternatives**: Full dual-language localization for all tools and reports in MVP (deferred to Phase C).
 
+### R18. Tavily Web Crawling for Warrant Data & Deterministic Parsing
+- **Decision**: Automated market data collection defaults to Tavily web crawling of Bursa warrant pages, parsed via deterministic Python code (`BeautifulSoup` / regex / structured table parsing) without LLM arithmetic or extraction. Crawling is scheduled 2–3 times per trading day (open, midday, close) with a 50-credit ceiling, reserving 150 credits for interactive news searches. Direct HTTP screener endpoint (`WX_MIBB_BASE_URL`) serves as secondary fallback.
+- **Rationale**: Complies with Constitution Principle I (deterministic numbers, zero LLM hallucination of financial figures) and Principle VI/VII (credit budget caps and untrusted input defense).
+- **Alternatives**: LLM table parsing (rejected: expensive token overhead and hallucination risk violating Principle I); continuous crawling (rejected: exhausts 200 daily credit limit).
+
 ## Constitution re-check after Phase 1 design
 
-All eleven principles remain PASS. The two actions found at the gate (persisted news for replay, no message text in storage) are reflected in R11, R12 and the data model.
+All eleven principles remain PASS. The actions found at the gate are reflected in R11, R12, R18 and the data model.
 
 ## Spec/Requirement reconciliations to carry into `/speckit-tasks`
 
@@ -114,3 +119,4 @@ All eleven principles remain PASS. The two actions found at the gate (persisted 
 5. Risk-free rate: single source of truth declared in `config/flags.yaml` under `risk_free_rate: 0.03`, with quant engine falling back to `0.03` (FR-023, OI-08).
 6. Session model: distinct `ChatSession` (in-memory, 2-hour idle expiry, last 10 turns) and `VisitorSession` (ephemeral client UUID, 24-hour TTL for visit deduplication).
 7. Holiday calendars: 2026 and 2027 Bursa exchange trading calendars verified from official circulars during spike T6 (T013) into static `config/bursa_holidays.yaml`; scheduler treats holidays as planned market closures.
+8. Tavily Crawler for Warrant Collection: Automated data collection defaults to Tavily web crawling with deterministic Python HTML table parsing (50 credits/day cap, 2-3 runs/day at open/midday/close), with direct screener endpoint (`WX_MIBB_BASE_URL`) as secondary fallback (FR-007, FR-020).
