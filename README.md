@@ -3,9 +3,16 @@
 [![CI](https://github.com/warrant-xray/warrants-x-ray/actions/workflows/ci.yml/badge.svg)](https://github.com/warrant-xray/warrants-x-ray/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Warrant X-Ray is a chat-first risk copilot for Malaysian retail traders of Bursa Malaysia structured warrants. It answers one question: **what does holding this warrant actually cost, and what has to go right for it to pay off?**
+Warrant X-Ray is an educational risk analytics and scenario simulation platform for Malaysian retail traders of Bursa Malaysia structured warrants. It answers one essential question: **what does holding this warrant actually cost, and what has to go right for it to pay off?**
 
-Every number shown to the user comes from a deterministic quant engine or verified market snapshot—LLMs never compute, convert, or round. Every news claim cites a verifiable source URL and retrieval time via Tavily Search over a strict 7-day recency window.
+> [!NOTE]
+> **Release Status & Feature Notice**:
+> - **Chat Function Disabled**: The conversational chat copilot interface is disabled in this release. All functionality is centered around the interactive **Stock Screener**, **Warrant X-Ray Risk Cards**, **Multi-Warrant Comparison**, **7-Day Market News**, and the deterministic **Scenario Simulator**.
+> - **Market Data Availability**: Live, real-time intraday tick data from Bursa Malaysia is currently not connected. The application runs on comprehensive synthetic market data fixtures and historical snapshots to demonstrate the quantitative engine, Greeks recalculation, and scenario stress-testing.
+
+Every number shown to the user comes from a deterministic quant engine—LLMs never compute, convert, or round. Every news item cites a verifiable source URL and retrieval timestamp via Tavily Search over a strict 7-day recency window.
+
+**Live Deployment (Google Cloud Run)**: [https://warrant-xray-98064612705.asia-southeast1.run.app](https://warrant-xray-98064612705.asia-southeast1.run.app)
 
 ---
 
@@ -57,20 +64,21 @@ Access the application at `http://localhost:8000`.
 ## 3. System Architecture
 
 ```text
-Browser (Vite + React SPA)
-   │  REST (JSON)                 │  POST /api/chat (SSE stream)
-   ▼                              ▼
+Browser (Vite + React SPA: Screener | X-Ray Card | Scenario Simulator | Compare | News)
+   │  REST (JSON): /api/warrants, /api/scenario, /api/compare, /api/news
+   ▼
 +--------------------------- FastAPI App ----------------------------+
 |  Middleware: anonymous sessions, daily-salted IP/UA hash, limits   |
 |                                                                    |
 |  Quant Core (Pure Functions)  <--- Repo (SQLite Snapshots & Data)  |
 |  - Black-Scholes pricing           - Append-only snapshots         |
-|  - Brent IV solver (5 bases)       - Normalized warrant rows       |
-|  - Holding cost & risk flags       - Replay mode                   |
+|  - Brent IV solver (Bid/Mid/Ask)   - Normalized warrant rows       |
+|  - Holding cost & risk flags       - Replay & Synthetic mode       |
 |                                                                    |
-|  Agent Orchestration (Google ADK)                                  |
-|  - Root Agent (Nemotron Super)     - Tavily Gateway (7-day window) |
-|  - Deep Report (Nemotron Ultra)    - Verify-Before-Stream Guard    |
+|  Data Intelligence & Search                                        |
+|  - Tavily Search Gateway (strict 7-day recency, Malaysian domains) |
+|  - Nemotron reasoning layer (reserved for Deep Risk Reports)       |
+|  - *Chat SSE stream endpoint: currently disabled in this release*   |
 +--------------------------------------------------------------------+
 ```
 
