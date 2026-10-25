@@ -87,12 +87,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         tavily_gateway=tavily_gateway,
     )
 
-    # Auto-load synthetic sample database if empty (T081)
+    # Auto-load market database on startup (Live web ingestion with synthetic fallback)
     try:
         latest = await repo.get_latest_good_snapshot()
         if latest is None:
-            logger.info("loading_synthetic_sample_database")
-            await repo.load_synthetic_sample_database()
+            try:
+                from scripts.live_web_ingestion import run_live_ingestion
+                logger.info("running_live_web_ingestion_on_startup")
+                await run_live_ingestion(settings.database_url)
+            except Exception as live_err:
+                logger.warning("live_web_ingestion_failed_falling_back_to_synthetic", error=str(live_err))
+                await repo.load_synthetic_sample_database()
     except Exception as e:
         logger.warning("sample_database_load_failed", error=str(e))
 
