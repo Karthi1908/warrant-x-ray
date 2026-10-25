@@ -1,4 +1,4 @@
-"""Live web ingestion of real Bursa Malaysia structured warrants from Macquarie Malaysia screener API.
+"""Live web ingestion of real Bursa Malaysia structured warrants (all issuers) from the Malaysia Warrants screener API.
 
 Fetches live market rows, normalizes fields, converts date strings, and persists into the SQLite repository as a new snapshot.
 """
@@ -20,7 +20,7 @@ from warrantx.config import get_settings
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("live_ingestion")
 
-URL = "https://www.malaysiawarrants.com.my/apimqmy/ScreenerJSONServlet?underlying=all&type=all&issuer=Macquarie&maturity=all&moneyness=all&moneynessPercent=all&effectiveGearing=all&expiry=all&indicator=all"
+URL = "https://www.malaysiawarrants.com.my/apimqmy/ScreenerJSONServlet?underlying=all&type=all&issuer=all&maturity=all&moneyness=all&moneynessPercent=all&effectiveGearing=all&expiry=all&indicator=all"
 
 MONTHS = {
     "jan": "01", "feb": "02", "mar": "03", "apr": "04", "may": "05", "jun": "06",
