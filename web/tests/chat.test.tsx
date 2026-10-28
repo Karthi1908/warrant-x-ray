@@ -4,6 +4,8 @@ import { CitationChip } from '../src/features/chat/CitationChip';
 import { Composer } from '../src/features/chat/Composer';
 import { SamplePrompts } from '../src/features/chat/SamplePrompts';
 import { ToolTrace } from '../src/features/chat/ToolTrace';
+import { AssistantMessage } from '../src/features/chat/AssistantMessage';
+import { LinkChip } from '../src/features/chat/LinkChip';
 
 describe('Chat Feature Components', () => {
   describe('CitationChip', () => {
@@ -67,4 +69,54 @@ describe('Chat Feature Components', () => {
       ).toBeDefined();
     });
   });
+
+  describe('AssistantMessage', () => {
+    it('renders text, disclaimer footer, and link chips', () => {
+      const onLinkClick = vi.fn();
+      render(
+        <AssistantMessage
+          content="This is an educational summary of Maybank call warrant."
+          links={[
+            {
+              kind: 'card',
+              label: 'Open the X-Ray card',
+              href: '/?tab=card&code=115510&days=5',
+              entity: { code: '115510' },
+            },
+          ]}
+          onLinkClick={onLinkClick}
+        />
+      );
+
+      expect(screen.getByText(/educational summary/i)).toBeDefined();
+      expect(screen.getByText(/Open the X-Ray card/i)).toBeDefined();
+      expect(screen.getByText(/Calculations and metrics provided via interactive links/i)).toBeDefined();
+
+      fireEvent.click(screen.getByText(/Open the X-Ray card/i));
+      expect(onLinkClick).toHaveBeenCalledWith(
+        '/?tab=card&code=115510&days=5',
+        expect.objectContaining({ kind: 'card' })
+      );
+    });
+  });
+
+  describe('LinkChip', () => {
+    it('renders an anchor tag for external news links', () => {
+      render(
+        <LinkChip
+          link={{
+            kind: 'news',
+            label: 'Read news coverage',
+            href: 'https://theedgemalaysia.com/article/maybank',
+          }}
+        />
+      );
+
+      const anchor = screen.getByRole('link', { name: /Read news coverage/i });
+      expect(anchor).toBeDefined();
+      expect(anchor.getAttribute('href')).toBe('https://theedgemalaysia.com/article/maybank');
+      expect(anchor.getAttribute('target')).toBe('_blank');
+    });
+  });
 });
+

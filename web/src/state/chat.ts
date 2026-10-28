@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { streamChat } from '../api/sse';
+import { streamChat, type ViewLinkData } from '../api/sse';
 import type { WarrantCardData } from '../features/card/types';
 import type { ToolTraceItem } from '../features/chat/ToolTrace';
 
@@ -17,6 +17,7 @@ export interface ChatMessage {
   content: string;
   isPartial?: boolean;
   isVerified?: boolean;
+  links?: ViewLinkData[];
 }
 
 export interface ChatState {
@@ -126,8 +127,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
               evidenceMap: { ...state.evidenceMap, [ev.evidence_id]: ev },
             }));
           },
-          onCard: (card) => {
-            set({ activeCard: card });
+          onCard: (_card) => {
+            // Calculation figures provided via deep links; ignore raw card event
+          },
+          onLinks: (data) => {
+            set((state) => {
+              const msgs = [...state.messages];
+              const lastIdx = msgs.length - 1;
+              if (lastIdx >= 0 && msgs[lastIdx].role === 'assistant') {
+                msgs[lastIdx] = {
+                  ...msgs[lastIdx],
+                  links: data.links,
+                };
+              }
+              return { messages: msgs };
+            });
           },
           onToken: (tok) => {
             set((state) => {

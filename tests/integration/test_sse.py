@@ -42,6 +42,7 @@ async def test_sse_advice_refusal_event_order(test_repo, monkeypatch):
         DATABASE_URL=test_repo.db_url,
         ENVIRONMENT="test",
         ADMIN_TOKEN="test-token",
+        chat_enabled=True,
     )
     app = create_app(settings=settings)
 
@@ -75,7 +76,8 @@ async def test_sse_advice_refusal_event_order(test_repo, monkeypatch):
 @pytest.mark.asyncio
 async def test_sse_message_length_limit():
     """Verify that requests exceeding 1,000 characters are rejected before model invocation."""
-    app = create_app()
+    settings = Settings(environment="test", chat_enabled=True)
+    app = create_app(settings=settings)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.post(

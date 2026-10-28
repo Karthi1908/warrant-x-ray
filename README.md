@@ -7,7 +7,7 @@ Warrant X-Ray is an educational risk analytics and scenario simulation platform 
 
 > [!NOTE]
 > **Release Status & Feature Notice**:
-> - **Chat Function Disabled**: The conversational chat copilot interface is disabled in this release. All functionality is centered around the interactive **Stock Screener**, **Warrant X-Ray Risk Cards**, **Multi-Warrant Comparison**, **7-Day Market News**, and the deterministic **Scenario Simulator**.
+> - **Local-Only Plain-English Chat**: The conversational chat copilot is disabled by default in production and Cloud Run (`WX_CHAT_ENABLED=false`). For local development, setting `WX_CHAT_ENABLED=true` on direct loopback requests (`127.0.0.1` / `localhost`) enables a strict plain-English copilot. The copilot explains warrants without numbers, percentages, or financial advice; all calculation-related metrics and figures are provided exclusively through interactive deep links (`card`, `scenario`, `compare`, `stock`, `news`).
 > - **Market Data Availability**: Live, real-time intraday tick data from Bursa Malaysia is currently not connected. The application runs on comprehensive synthetic market data fixtures and historical snapshots to demonstrate the quantitative engine, Greeks recalculation, and scenario stress-testing.
 
 Every number shown to the user comes from a deterministic quant engine—LLMs never compute, convert, or round. Every news item cites a verifiable source URL and retrieval timestamp via Tavily Search over a strict 7-day recency window.

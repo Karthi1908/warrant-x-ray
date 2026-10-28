@@ -11,11 +11,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
-from fastapi import FastAPI, Request, Response, status
+from fastapi import Depends, FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+from warrantx.api.chat_gate import require_local_chat
 from warrantx.api.errors import NotFoundError, register_error_handlers
 from warrantx.api.logging import get_logger, request_id_ctx, setup_logging
 from warrantx.api.routes.admin import router as admin_router
@@ -191,7 +192,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     # Register API routers
     app.include_router(meta_router)
     app.include_router(data_router)
-    app.include_router(chat_router)
+    app.include_router(chat_router, dependencies=[Depends(require_local_chat)])
     app.include_router(report_router)
     if settings.admin_token:
         app.include_router(admin_router)

@@ -4,15 +4,19 @@ import type { ChatMessage } from '../../state/chat';
 import { AssistantMessage } from './AssistantMessage';
 import { Bot, User } from 'lucide-react';
 
+import type { ViewLinkData } from '../../api/sse';
+
 export interface MessageListProps {
   messages: ChatMessage[];
   onCitationClick?: (evidenceId: string) => void;
+  onLinkClick?: (href: string, link: ViewLinkData) => void;
   className?: string;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   onCitationClick,
+  onLinkClick,
   className,
 }) => {
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -67,7 +71,9 @@ export const MessageList: React.FC<MessageListProps> = ({
                 content={msg.content}
                 isPartial={msg.isPartial}
                 isVerified={msg.isVerified}
+                links={msg.links}
                 onCitationClick={onCitationClick}
+                onLinkClick={onLinkClick}
               />
             </div>
           </div>

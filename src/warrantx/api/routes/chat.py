@@ -19,6 +19,7 @@ from warrantx.agents.sessions import session_manager
 from warrantx.api.budget import is_budget_exhausted
 from warrantx.api.ratelimit import chat_rate_limiter
 from warrantx.api.sse import format_sse
+from warrantx.chat.turn import run_plain_turn
 from warrantx.guardrails.fallback import generate_fallback_response
 from warrantx.guardrails.templates import get_budget_exhausted_notice
 from warrantx.llm.models import get_model
@@ -79,6 +80,18 @@ async def chat_turn(chat_in: ChatTurnRequest, request: Request) -> Any:
 
     repo = getattr(request.app.state, "repo", None)
     settings = getattr(request.app.state, "settings", None)
+    if not settings:
+        from warrantx.config import get_settings
+        settings = get_settings()
+
+    if not repo:
+        try:
+            from warrantx.data.repo import create_repo
+            repo = create_repo(settings.database_url)
+            await repo.init_tables()
+            request.app.state.repo = repo
+        except Exception:
+            pass
 
     # In-memory session tracking
     session = session_manager.get_or_create_chat_session(chat_in.session_id)
@@ -101,14 +114,29 @@ async def chat_turn(chat_in: ChatTurnRequest, request: Request) -> Any:
         )
         await asyncio.sleep(0.01)
 
-        if budget_exhausted:
-            fallback_res = await generate_fallback_response(
-                message=chat_in.message,
+        try:
+            # 3. Run plain-English turn
+            news_service = getattr(request.app.state, "news_service", None)
+            llm = get_model("super", settings=settings) if not budget_exhausted else None
+
+            turn_res = await run_plain_turn(
                 repo=repo,
+                message=chat_in.message,
+                session_id=chat_in.session_id,
+                llm=llm,
+                mode=chat_in.mode,
                 turn_id=turn_id,
-                snapshot_id=chat_in.snapshot_id,
+                news_service=news_service,
+                budget_exhausted=budget_exhausted,
             )
-            for ev in fallback_res.evidence_items:
+
+            # Emit tool statuses if any
+            for status_text in turn_res.status_history:
+                yield format_sse("status", {"step": "tool_running", "text": status_text})
+                await asyncio.sleep(0.01)
+
+            # Emit evidence (summary is digit-free; NO card event is emitted)
+            for ev in turn_res.evidence_items:
                 yield format_sse(
                     "evidence",
                     {
@@ -119,91 +147,56 @@ async def chat_turn(chat_in: ChatTurnRequest, request: Request) -> Any:
                         "summary": ev.summary,
                     },
                 )
-                if ev.kind == "card":
-                    yield format_sse("card", ev.payload)
                 await asyncio.sleep(0.01)
 
-            words = fallback_res.final_text.split(" ")
+            # 4. Stream verified tokens in word chunks
+            words = turn_res.final_text.split(" ")
             for i, word in enumerate(words):
                 chunk = word if i == len(words) - 1 else f"{word} "
                 yield format_sse("token", {"text": chunk})
                 await asyncio.sleep(0.01)
 
+            # 5. Emit verifier metadata
             yield format_sse(
                 "verifier",
                 {
-                    "passed": True,
+                    "passed": turn_res.verifier_passed,
                     "retried": False,
                     "removed_sentences": 0,
                 },
             )
+            await asyncio.sleep(0.01)
+
+            # 6. Emit links event
+            links_data = [link.model_dump() for link in turn_res.links]
+            yield format_sse("links", {"links": links_data})
+            await asyncio.sleep(0.01)
+
+            # 7. done
             yield format_sse("done", {"turn_id": turn_id})
 
+            # Save to in-memory session history
             session.add_turn(
                 turn_id=turn_id,
                 user_message=chat_in.message,
-                assistant_response=fallback_res.final_text,
+                assistant_response=turn_res.final_text,
             )
-            return
-
-        # 3. Initialize RootAgent and run turn
-        llm = get_model("super", settings=settings)
-        agent = RootAgent(llm=llm, repo=repo)
-
-        turn_res = await agent.run_turn(
-            message=chat_in.message,
-            session_id=chat_in.session_id,
-            mode=chat_in.mode,
-            turn_id=turn_id,
-        )
-
-        # Emit tool statuses, evidence, and cards if collected
-        for status_text in turn_res.status_history:
-            yield format_sse("status", {"step": "tool_running", "text": status_text})
-            await asyncio.sleep(0.01)
-
-        for ev in turn_res.evidence_items:
-            yield format_sse(
-                "evidence",
-                {
-                    "evidence_id": ev.id,
-                    "kind": ev.kind,
-                    "source": ev.source,
-                    "as_of": ev.as_of,
-                    "summary": ev.summary,
-                },
+        except Exception as ex:
+            # Fallback error response so stream never breaks abruptly
+            yield format_sse("status", {"step": "error", "text": "Encountered issue processing request."})
+            fallback_msg = (
+                "Unable to process the query at this moment due to a service delay. "
+                "Please inspect the warrant directly via the X-Ray Card or Stock Screener below.\n\n"
+                "Educational and analytical tool only. Not financial advice."
             )
-            if ev.kind == "card":
-                yield format_sse("card", ev.payload)
-            await asyncio.sleep(0.01)
+            for w in fallback_msg.split(" "):
+                yield format_sse("token", {"text": f"{w} "})
+                await asyncio.sleep(0.01)
 
-        # 4. Stream verified tokens in word chunks
-        words = turn_res.final_text.split(" ")
-        for i, word in enumerate(words):
-            chunk = word if i == len(words) - 1 else f"{word} "
-            yield format_sse("token", {"text": chunk})
-            await asyncio.sleep(0.01)
-
-        # 5. Emit verifier metadata
-        yield format_sse(
-            "verifier",
-            {
-                "passed": len(turn_res.ungrounded_tokens) == 0,
-                "retried": False,
-                "removed_sentences": len(turn_res.ungrounded_tokens),
-            },
-        )
-        await asyncio.sleep(0.01)
-
-        # 6. done
-        yield format_sse("done", {"turn_id": turn_id})
-
-        # Save to in-memory session history
-        session.add_turn(
-            turn_id=turn_id,
-            user_message=chat_in.message,
-            assistant_response=turn_res.final_text,
-        )
+            from warrantx.chat.links import build_stock_link
+            fallback_links = [build_stock_link("MAYBANK").model_dump()]
+            yield format_sse("links", {"links": fallback_links})
+            yield format_sse("done", {"turn_id": turn_id})
 
     return EventSourceResponse(event_generator())
 

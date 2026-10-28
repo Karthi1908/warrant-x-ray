@@ -11,6 +11,9 @@ export interface HeaderProps {
   marketOpen?: boolean;
   selectedSnapshotId?: number | null;
   onSelectSnapshot?: (id: number | null) => void;
+  chatEnabled?: boolean;
+  chatOpen?: boolean;
+  onToggleChat?: () => void;
   className?: string;
 }
 
@@ -21,6 +24,9 @@ export const Header: React.FC<HeaderProps> = ({
   marketOpen = false,
   selectedSnapshotId,
   onSelectSnapshot,
+  chatEnabled = false,
+  chatOpen = false,
+  onToggleChat,
   className,
 }) => {
   const [isDark, setIsDark] = useState(false);
@@ -74,6 +80,23 @@ export const Header: React.FC<HeaderProps> = ({
           onSelectSnapshot={onSelectSnapshot}
         />
         <DataBadge mode={mode} asOf={asOf} isStale={isStale} marketOpen={marketOpen} />
+
+        {chatEnabled && (
+          <button
+            type="button"
+            onClick={onToggleChat}
+            title={chatOpen ? 'Close Copilot Chat' : 'Open Copilot Chat'}
+            className={cn(
+              'px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer',
+              chatOpen
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'border-border bg-card hover:bg-muted text-foreground'
+            )}
+          >
+            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <span>Chat</span>
+          </button>
+        )}
 
         {/* Theme Toggle Button */}
         <button

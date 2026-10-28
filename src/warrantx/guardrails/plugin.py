@@ -37,6 +37,18 @@ def strip_reasoning_traces(text: str) -> str:
     return cleaned
 
 
+_URL_PATTERN = re.compile(r"https?://\S+|www\.\S+", re.IGNORECASE)
+_MARKDOWN_LINK_PATTERN = re.compile(r"\[([^\]]+)\]\([^\)]+\)")
+
+
+def strip_urls(text: str) -> str:
+    """Strip URL-like text and markdown link destinations from model output."""
+    cleaned = _MARKDOWN_LINK_PATTERN.sub(r"\1", text)
+    cleaned = _URL_PATTERN.sub("", cleaned)
+    cleaned = re.sub(r"[ \t]+", " ", cleaned)
+    return cleaned.strip()
+
+
 class GuardrailPlugin:
     """Plugin enforcing strict regulatory and runtime limits on agent turns."""
 
@@ -63,5 +75,6 @@ class GuardrailPlugin:
         return sanitized_args
 
     def after_generation(self, text: str) -> str:
-        """Strip internal reasoning traces before passing text to grounding verifier."""
-        return strip_reasoning_traces(text)
+        """Strip internal reasoning traces and URLs before passing text to grounding verifier."""
+        return strip_urls(strip_reasoning_traces(text))
+

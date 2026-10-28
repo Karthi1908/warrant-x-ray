@@ -97,6 +97,7 @@ async def test_chat_endpoint_daily_cap_fallback(test_repo: AsyncRepository):
         ENVIRONMENT="test",
         ADMIN_TOKEN="test-token",
         LLM_DAILY_USD_CAP=10.0,
+        chat_enabled=True,
     )
     app = create_app(settings=settings)
     app.state.repo = test_repo

@@ -141,10 +141,13 @@ export const ScenarioSliders: React.FC<ScenarioSlidersProps> = ({
           className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-          <span>-20%</span>
-          <span>0%</span>
-          <span>+20%</span>
+          <span>-20% (Bearish)</span>
+          <span>0% (Flat)</span>
+          <span>+20% (Bullish)</span>
         </div>
+        <p className="text-[10px] text-muted-foreground/85 leading-tight">
+          Projected % change in the underlying stock price over your simulation timeframe.
+        </p>
       </div>
 
       {/* Slider 2: Holding Period */}
@@ -169,10 +172,13 @@ export const ScenarioSliders: React.FC<ScenarioSlidersProps> = ({
           className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-          <span>0d</span>
+          <span>0d (Instant)</span>
           <span>{Math.round(maxDays / 2)}d</span>
           <span>{maxDays}d (Expiry)</span>
         </div>
+        <p className="text-[10px] text-muted-foreground/85 leading-tight">
+          Holding duration. Warrants lose value every day purely from calendar decay (theta drag).
+        </p>
       </div>
 
       {/* Slider 3: Implied Volatility Shift */}
@@ -206,10 +212,13 @@ export const ScenarioSliders: React.FC<ScenarioSlidersProps> = ({
           className="w-full h-1.5 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground font-mono">
-          <span>-15 pts</span>
-          <span>0 pts</span>
-          <span>+15 pts</span>
+          <span>-15 pts (Crush)</span>
+          <span>0 pts (Constant)</span>
+          <span>+15 pts (Surge)</span>
         </div>
+        <p className="text-[10px] text-muted-foreground/85 leading-tight">
+          Change in market maker pricing volatility. Negative shifts simulate IV crush post-earnings.
+        </p>
       </div>
     </div>
   );

@@ -60,6 +60,12 @@ class Settings(BaseSettings):
     log_json: bool = Field(default=True, description="Output structured logs in JSON format")
     llm_stub: bool = Field(default=False, description="Use stub model responses for offline integration testing")
 
+    # Local-only plain-English chat (spec 002). ASSUMPTION: off by default; never set in deployed environments.
+    chat_enabled: bool = Field(
+        default=False,
+        description="Enable the local-only plain-English chat (also requires a direct loopback request)",
+    )
+
     @property
     def ENVIRONMENT(self) -> str:
         return self.environment

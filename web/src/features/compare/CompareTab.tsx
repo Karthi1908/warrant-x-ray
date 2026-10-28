@@ -148,28 +148,33 @@ export const CompareTab: React.FC<CompareTabProps> = ({
         </div>
 
         {/* Right: Holding Days Stepper */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Clock className="h-3.5 w-3.5 text-rose-500" />
-            Horizon:
-          </span>
-          <div className="flex rounded-lg border border-border bg-card p-0.5 font-mono text-[11px]">
-            {HOLDING_DAYS_PRESETS.map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setHoldingDays(d)}
-                className={cn(
-                  'rounded px-2 py-0.5 font-bold transition-all',
-                  holdingDays === d
-                    ? 'bg-primary text-primary-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                )}
-              >
-                {d}d
-              </button>
-            ))}
+        <div className="flex flex-col sm:items-end gap-1 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1 text-[11px] font-medium text-foreground">
+              <Clock className="h-3.5 w-3.5 text-rose-500" />
+              Holding Horizon:
+            </span>
+            <div className="flex rounded-lg border border-border bg-card p-0.5 font-mono text-[11px]">
+              {HOLDING_DAYS_PRESETS.map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setHoldingDays(d)}
+                  className={cn(
+                    'rounded px-2.5 py-1 font-bold transition-all',
+                    holdingDays === d
+                      ? 'bg-primary text-primary-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
           </div>
+          <span className="text-[10px] text-muted-foreground">
+            Recalculates cumulative theta time decay and required breakeven share move over {holdingDays} day{holdingDays > 1 ? 's' : ''}.
+          </span>
         </div>
       </div>
 

@@ -23,7 +23,10 @@ import {
   Newspaper,
   Search,
   Layers,
+  X,
 } from 'lucide-react';
+import { ChatPanel } from './features/chat/ChatPanel';
+import type { ViewLinkData } from './api/sse';
 
 export type TabKey = 'stock' | 'card' | 'scenario' | 'compare' | 'sources' | 'health';
 
@@ -37,40 +40,47 @@ export default function App(): React.JSX.Element {
     as_of?: string;
     market_open?: boolean;
     stale?: boolean;
+    chat_enabled?: boolean;
   }>({
     mode: 'sample',
     as_of: '2026-10-16 16:30',
     market_open: false,
     stale: false,
+    chat_enabled: false,
   });
 
   const activeCard = useChatStore((state) => state.activeCard);
   const setActiveCard = useChatStore((state) => state.setActiveCard);
   const cardToDisplay = activeCard || SAMPLE_CARD;
 
-  const handleInspectWarrant = async (code: string) => {
+  const fetchAndSetCard = async (code: string, days?: number) => {
     try {
-      const resp = await fetch(`/api/warrants/${code}`);
+      const url = days ? `/api/warrants/${code}?holding_days=${days}` : `/api/warrants/${code}`;
+      const resp = await fetch(url);
       if (resp.ok) {
         const card = await resp.json();
         setActiveCard(card);
+        return card;
       }
     } catch {
       // fallback
     }
+    return null;
+  };
+
+  const handleHoldingDaysChange = async (days: number) => {
+    if (cardToDisplay.code) {
+      await fetchAndSetCard(cardToDisplay.code, days);
+    }
+  };
+
+  const handleInspectWarrant = async (code: string) => {
+    await fetchAndSetCard(code);
     setActiveTab('card');
   };
 
   const handleSimulateWarrant = async (code: string) => {
-    try {
-      const resp = await fetch(`/api/warrants/${code}`);
-      if (resp.ok) {
-        const card = await resp.json();
-        setActiveCard(card);
-      }
-    } catch {
-      // fallback
-    }
+    await fetchAndSetCard(code);
     setActiveTab('scenario');
   };
 
@@ -85,6 +95,128 @@ export default function App(): React.JSX.Element {
     }
     setActiveTab('compare');
   };
+
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const handleLinkClick = async (href: string, link: ViewLinkData) => {
+    try {
+      const url = new URL(href, window.location.origin);
+      const tabParam = url.searchParams.get('tab') as TabKey | null;
+      const targetTab: TabKey =
+        tabParam && ['stock', 'card', 'scenario', 'compare', 'sources', 'health'].includes(tabParam)
+          ? tabParam
+          : (link.kind === 'card' ||
+             link.kind === 'scenario' ||
+             link.kind === 'compare' ||
+             link.kind === 'sources' ||
+             link.kind === 'stock' ||
+             link.kind === 'health'
+              ? (link.kind as TabKey)
+              : 'stock');
+
+      if (link.entity?.code) {
+        await fetchAndSetCard(link.entity.code);
+      }
+      if (link.entity?.codes && link.entity.codes.length > 0) {
+        setCompareCodes(link.entity.codes);
+      }
+      if (link.entity?.ticker) {
+        setCurrentTicker(link.entity.ticker);
+      }
+
+      setActiveTab(targetTab);
+      window.history.pushState(null, '', href);
+    } catch {
+      // fallback
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab') as TabKey | null;
+      const targetTab: TabKey =
+        tabParam && ['stock', 'card', 'scenario', 'compare', 'sources', 'health'].includes(tabParam)
+          ? tabParam
+          : 'stock';
+
+      const codeParam = params.get('code');
+      if (codeParam) {
+        fetchAndSetCard(codeParam);
+      }
+      const codesParam = params.get('codes');
+      if (codesParam) {
+        const splitCodes = codesParam.split(',').filter(Boolean);
+        if (splitCodes.length >= 2) {
+          setCompareCodes(splitCodes);
+        }
+      }
+      const tickerParam = params.get('ticker');
+      if (tickerParam) {
+        setCurrentTicker(tickerParam);
+      }
+
+      setActiveTab(targetTab);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab') as TabKey | null;
+        if (tabParam && ['stock', 'card', 'scenario', 'compare', 'sources', 'health'].includes(tabParam)) {
+          setActiveTab(tabParam);
+        }
+        const codeParam = params.get('code');
+        if (codeParam) {
+          fetchAndSetCard(codeParam);
+        }
+        const codesParam = params.get('codes');
+        if (codesParam) {
+          const splitCodes = codesParam.split(',').filter(Boolean);
+          if (splitCodes.length >= 2) {
+            setCompareCodes(splitCodes);
+          }
+        }
+        const tickerParam = params.get('ticker');
+        if (tickerParam) {
+          setCurrentTicker(tickerParam);
+        }
+      } catch {
+        // ignore
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams();
+      params.set('tab', activeTab);
+      if (activeCard?.code && (activeTab === 'card' || activeTab === 'scenario' || activeTab === 'sources')) {
+        params.set('code', activeCard.code);
+      }
+      if (activeTab === 'card' && activeCard?.holding_days) {
+        params.set('days', String(activeCard.holding_days));
+      }
+      if (activeTab === 'compare' && compareCodes.length > 0) {
+        params.set('codes', compareCodes.join(','));
+      }
+      if ((activeTab === 'stock' || activeTab === 'sources') && currentTicker) {
+        params.set('ticker', currentTicker);
+      }
+      const newSearch = `?${params.toString()}`;
+      if (window.location.search !== newSearch) {
+        window.history.replaceState(null, '', newSearch);
+      }
+    } catch {
+      // ignore
+    }
+  }, [activeTab, activeCard?.code, activeCard?.holding_days, compareCodes, currentTicker]);
 
   useEffect(() => {
     let mounted = true;
@@ -101,6 +233,7 @@ export default function App(): React.JSX.Element {
                 : undefined,
               market_open: Boolean(data.market_open),
               stale: Boolean(data.stale),
+              chat_enabled: Boolean(data.chat_enabled),
             });
           }
         }
@@ -130,6 +263,9 @@ export default function App(): React.JSX.Element {
         marketOpen={meta.market_open}
         selectedSnapshotId={selectedSnapshotId}
         onSelectSnapshot={setSelectedSnapshotId}
+        chatEnabled={meta.chat_enabled}
+        chatOpen={chatOpen}
+        onToggleChat={() => setChatOpen((prev) => !prev)}
       />
 
       {meta.stale && (
@@ -389,6 +525,7 @@ export default function App(): React.JSX.Element {
           {activeTab === 'card' && (
             <CardTab
               card={cardToDisplay}
+              onHoldingDaysChange={handleHoldingDaysChange}
               onSimulate={handleSimulateWarrant}
               onCompare={handleAddToCompare}
             />
@@ -413,6 +550,26 @@ export default function App(): React.JSX.Element {
           {activeTab === 'health' && <HealthTab />}
         </div>
       </main>
+
+      {meta.chat_enabled && chatOpen && (
+        <aside
+          aria-label="Risk Copilot Chat Drawer"
+          className="fixed inset-y-0 right-0 z-40 w-full sm:w-[460px] bg-card/95 backdrop-blur-md border-l-2 border-border shadow-2xl p-3 sm:p-4 flex flex-col pt-16 sm:pt-4"
+        >
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-border/60">
+            <span className="text-xs font-bold text-foreground">Risk Copilot Chat</span>
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              className="text-xs text-muted-foreground hover:text-foreground p-1 rounded-lg hover:bg-muted transition-colors"
+              title="Close Chat"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <ChatPanel onLinkClick={handleLinkClick} className="flex-1 min-h-0" />
+        </aside>
+      )}
 
       <Footer />
     </div>

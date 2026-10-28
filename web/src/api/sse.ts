@@ -8,6 +8,21 @@ export interface ChatRequest {
   snapshot_id?: number | null;
 }
 
+export type LinkKind = 'card' | 'scenario' | 'compare' | 'stock' | 'sources' | 'health' | 'news';
+
+export interface ViewLinkData {
+  kind: LinkKind;
+  label: string;
+  href: string;
+  entity?: {
+    code?: string;
+    ticker?: string;
+    codes?: string[];
+  };
+  evidence_id?: string;
+  retrieved_at?: string | null;
+}
+
 export interface ChatSseCallbacks {
   onTurnStarted?: (data: { turn_id: string }) => void;
   onStatus?: (data: { step: number; text: string }) => void;
@@ -22,6 +37,7 @@ export interface ChatSseCallbacks {
   onCard?: (card: WarrantCardData) => void;
   onToken?: (data: { text: string }) => void;
   onVerifier?: (data: { passed: boolean; retried: boolean; removed_sentences: number }) => void;
+  onLinks?: (data: { links: ViewLinkData[] }) => void;
   onUsage?: (data: {
     model: string;
     tier: string;
@@ -94,6 +110,9 @@ export async function streamChat(
             break;
           case 'verifier':
             callbacks.onVerifier?.(parsed);
+            break;
+          case 'links':
+            callbacks.onLinks?.(parsed);
             break;
           case 'usage':
             callbacks.onUsage?.(parsed);

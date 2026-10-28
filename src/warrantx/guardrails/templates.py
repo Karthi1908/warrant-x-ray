@@ -108,3 +108,66 @@ def get_replay_notice(lang: str = "en") -> str:
 def get_sample_notice(lang: str = "en") -> str:
     """Retrieve the sample data notice."""
     return SAMPLE_NOTICES.get(lang.lower(), SAMPLE_NOTICES["en"])
+
+
+MODE_PHRASES = {
+    "live": "Data is sourced from the live exchange market feed.",
+    "replay": "Data is sourced from a historical market replay snapshot.",
+    "sample": "Data is sourced from sample benchmark data.",
+}
+
+PLAIN_BUDGET_EXHAUSTED_NOTICES = {
+    "en": (
+        "The daily AI query limit has been reached. Factual warrant information and interactive "
+        "links remain available below without model commentary."
+    ),
+    "ms": (
+        "Had pertanyaan AI harian telah dicapai. Maklumat fakta waran dan pautan interaktif "
+        "tetap tersedia di bawah tanpa ulasan model."
+    ),
+}
+
+
+def get_mode_phrase(mode: str) -> str:
+    """Retrieve digit-free mode description phrase."""
+    return MODE_PHRASES.get(mode.lower(), MODE_PHRASES["sample"])
+
+
+def get_plain_budget_notice(lang: str = "en") -> str:
+    """Retrieve digit-free budget exhausted notice."""
+    return PLAIN_BUDGET_EXHAUSTED_NOTICES.get(lang.lower(), PLAIN_BUDGET_EXHAUSTED_NOTICES["en"])
+
+
+def get_plain_warrant_template(
+    code: str,
+    ticker: str,
+    option_type: str,
+    phrases: list[str],
+    mode_phrase: str = "",
+) -> str:
+    """Deterministic, digit-free fallback summary for a warrant."""
+    desc = f"This is a {option_type} warrant linked to {ticker} (code {code})."
+    parts = [desc]
+    if phrases:
+        parts.extend(phrases)
+    if mode_phrase:
+        parts.append(mode_phrase)
+    parts.append("Exact calculations, Greek metrics, and what-if scenarios are available via the links below.")
+    return " ".join(parts)
+
+
+def get_plain_term_template(term: str, explanation: str) -> str:
+    """Deterministic, digit-free fallback explanation for a financial term."""
+    return (
+        f"Here is an overview of {term}: {explanation} "
+        "Explore real-time calculations and live sensitivity through the links below."
+    )
+
+
+def get_plain_unknown_entity_template(query_snippet: str = "") -> str:
+    """Deterministic, digit-free fallback when an entity is not found."""
+    return (
+        "The requested warrant or stock could not be identified in the active database. "
+        "You can explore all available warrants by opening the stock screener below."
+    )
+

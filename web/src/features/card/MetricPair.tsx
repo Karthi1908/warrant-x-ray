@@ -12,6 +12,7 @@ export interface MetricPairProps {
   isMismatch?: boolean;
   glossaryKey?: keyof typeof GLOSSARY | string;
   basis?: string;
+  description?: string;
   className?: string;
 }
 
@@ -23,6 +24,7 @@ export const MetricPair: React.FC<MetricPairProps> = ({
   isMismatch = false,
   glossaryKey,
   basis,
+  description,
   className,
 }) => {
   const term = glossaryKey ? getGlossaryTerm(glossaryKey) : undefined;
@@ -85,6 +87,12 @@ export const MetricPair: React.FC<MetricPairProps> = ({
           </span>
         </div>
       </div>
+
+      {description && (
+        <p className="mt-2.5 text-[11px] leading-relaxed text-muted-foreground border-t border-border/60 pt-2">
+          {description}
+        </p>
+      )}
     </div>
   );
 };

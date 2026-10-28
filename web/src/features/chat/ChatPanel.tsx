@@ -7,11 +7,14 @@ import { SamplePrompts } from './SamplePrompts';
 import { Composer } from './Composer';
 import { Trash2, AlertCircle, X } from 'lucide-react';
 
+import type { ViewLinkData } from '../../api/sse';
+
 export interface ChatPanelProps {
+  onLinkClick?: (href: string, link: ViewLinkData) => void;
   className?: string;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ className }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ onLinkClick, className }) => {
   const {
     messages,
     isStreaming,
@@ -83,6 +86,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ className }) => {
       <MessageList
         messages={messages}
         onCitationClick={(id) => setSelectedEvidenceId(id)}
+        onLinkClick={onLinkClick}
         className="flex-1 min-h-0"
       />
 

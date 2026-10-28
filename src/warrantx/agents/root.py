@@ -19,6 +19,7 @@ from typing import Any
 from google.adk.models import BaseLlm, LlmRequest, LlmResponse
 from google.genai.types import Content, Part
 
+from warrantx.chat.intent import resolve_underlying_ticker
 from warrantx.data.repo import AsyncRepository
 from warrantx.guardrails.injection import detect_prompt_injection
 from warrantx.guardrails.intent import check_advice_intent
@@ -131,26 +132,25 @@ class RootAgent:
         # If no specific warrant code matched, check if an underlying stock is mentioned
         if not evidence_items:
             underlyings = await self.repo.list_underlyings()
-            for u in underlyings:
-                if u.ticker.lower() in message.lower() or (u.name and u.name.lower() in message.lower()):
-                    status_text = get_tool_status_text("search_warrants")
-                    if status_text not in status_history:
-                        status_history.append(status_text)
-                    warrants = await self.repo.list_warrants_for_underlying(u.ticker)
-                    if warrants:
-                        top_w = warrants[0]
-                        card_payload, ev = await self.registry.get_warrant_card(
-                            code=top_w.code,
-                            holding_days=5,
-                            turn_id=t_id,
-                            evidence_index=len(evidence_items) + 1,
-                        )
-                        if ev:
-                            evidence_items.append(ev)
-                            allowlist.update(ev.allowlist)
-                            allowlist.add(ev.id)
-                            allowlist.add(f"[{ev.id}]")
-                    break
+            matched_ticker = resolve_underlying_ticker(message, underlyings)
+            if matched_ticker:
+                status_text = get_tool_status_text("search_warrants")
+                if status_text not in status_history:
+                    status_history.append(status_text)
+                warrants = await self.repo.list_warrants_for_underlying(matched_ticker)
+                if warrants:
+                    top_w = warrants[0]
+                    card_payload, ev = await self.registry.get_warrant_card(
+                        code=top_w.code,
+                        holding_days=5,
+                        turn_id=t_id,
+                        evidence_index=len(evidence_items) + 1,
+                    )
+                    if ev:
+                        evidence_items.append(ev)
+                        allowlist.update(ev.allowlist)
+                        allowlist.add(ev.id)
+                        allowlist.add(f"[{ev.id}]")
 
         # Prepare ADK request
         prompt_text = message

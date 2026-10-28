@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Request
 from pydantic import BaseModel, Field
 
+from warrantx.api.chat_gate import is_local_request
 from warrantx.config import get_settings
 from warrantx.data.staleness import evaluate_data_staleness
 
@@ -57,12 +58,13 @@ class MetaResponse(BaseModel):
     resolved_model_ids: dict[str, str] = Field(default_factory=dict)
     tier_health: dict[str, str] = Field(default_factory=dict)
     usage_metrics: PublicUsageMetrics = Field(default_factory=PublicUsageMetrics)
+    chat_enabled: bool = False
 
 
 @router.get("/meta", response_model=MetaResponse)
 async def get_meta(request: Request) -> MetaResponse:
     """Return operational metadata, model status, staleness, and public usage counts."""
-    settings = get_settings()
+    settings = getattr(request.app.state, "settings", None) or get_settings()
     repo = getattr(request.app.state, "repo", None)
 
     usage = PublicUsageMetrics()
@@ -108,6 +110,8 @@ async def get_meta(request: Request) -> MetaResponse:
         else:
             mode = "sample"
 
+    chat_enabled = is_local_request(request, settings)
+
     return MetaResponse(
         version="0.1.0",
         mode=mode,
@@ -128,6 +132,7 @@ async def get_meta(request: Request) -> MetaResponse:
             "ultra": "healthy",
         },
         usage_metrics=usage,
+        chat_enabled=chat_enabled,
     )
 
 

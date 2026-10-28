@@ -85,47 +85,62 @@ export const HoldingCostBar: React.FC<HoldingCostBarProps> = ({
 
       {/* Detail Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5">
-          <div className="flex items-center justify-between font-medium text-amber-700 dark:text-amber-400">
-            <span>Spread Friction</span>
-            <span className="font-mono font-semibold">
-              {presets.display_spread_cost || '—'}
-            </span>
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between font-medium text-amber-700 dark:text-amber-400">
+              <span className="font-semibold text-xs">Spread Friction</span>
+              <span className="font-mono text-sm font-bold">
+                {presets.display_spread_cost || '—'}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+              Immediate round-trip cost ((Ask - Bid) / Mid) surrendered upon entry and exit to the market maker spread before any price movement.
+            </p>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Round-trip entry and exit spread cost.
-          </p>
+          <div className="mt-2 text-[10px] font-mono text-amber-700/80 dark:text-amber-400/80 bg-amber-500/10 px-1.5 py-0.5 rounded w-fit">
+            Fixed trading toll
+          </div>
         </div>
 
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-2.5">
-          <div className="flex items-center justify-between font-medium text-rose-700 dark:text-rose-400">
-            <span>Theta Decay ({holdingDays}d)</span>
-            <span className="font-mono font-semibold">
-              {presets.display_flat_decay || '—'}
-            </span>
+        <div className="rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between font-medium text-rose-700 dark:text-rose-400">
+              <span className="font-semibold text-xs">Theta Decay ({holdingDays}d)</span>
+              <span className="font-mono text-sm font-bold">
+                {presets.display_flat_decay || '—'}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+              Expected loss of warrant value over {holdingDays} day{holdingDays > 1 ? 's' : ''} purely from calendar time passage if {underlyingTicker} remains flat.
+            </p>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Time erosion over the {holdingDays}-day period.
-          </p>
+          <div className="mt-2 text-[10px] font-mono text-rose-700/80 dark:text-rose-400/80 bg-rose-500/10 px-1.5 py-0.5 rounded w-fit">
+            Time erosion drag
+          </div>
         </div>
 
-        <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-2.5">
-          <div className="flex items-center justify-between font-medium text-purple-700 dark:text-purple-400">
-            <span>IV Crush (-5 pts)</span>
-            <span className="font-mono font-semibold">
-              {presets.display_iv_crush || '—'}
-            </span>
+        <div className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between font-medium text-purple-700 dark:text-purple-400">
+              <span className="font-semibold text-xs">IV Crush (-5 pts)</span>
+              <span className="font-mono text-sm font-bold">
+                {presets.display_iv_crush || '—'}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed">
+              Estimated percentage drop in warrant price if the issuer contracts implied volatility by 5.0 points (common after corporate events).
+            </p>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">
-            Estimated loss if implied volatility drops 5 pts.
-          </p>
+          <div className="mt-2 text-[10px] font-mono text-purple-700/80 dark:text-purple-400/80 bg-purple-500/10 px-1.5 py-0.5 rounded w-fit">
+            Volatility compression
+          </div>
         </div>
       </div>
 
-      <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg bg-muted/40 p-2.5 text-[11px] text-muted-foreground leading-relaxed">
         <ShieldAlert className="h-4 w-4 shrink-0 text-muted-foreground/80 mt-0.5" />
         <span>
-          Time decay is non-linear and accelerates sharply as expiry nears. A warrant requires continuous stock movement to overcome theta drag and round-trip transaction friction.
+          <strong>Holding Drag Rule:</strong> Time decay is non-linear and accelerates sharply as expiry nears. Over a {holdingDays}-day period, {underlyingTicker} must continuously advance to overcome the cumulative friction of round-trip spread toll and theta erosion.
         </span>
       </div>
     </div>

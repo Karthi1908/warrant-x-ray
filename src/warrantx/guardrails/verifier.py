@@ -181,7 +181,8 @@ def strip_and_note(
     for sent in sentences:
         has_ungrounded = False
         for tok in ungrounded_tokens:
-            pattern = rf"(?<![\w.]){re.escape(tok)}(?![\w.])"
+            escaped_tok = re.escape(tok)
+            pattern = rf"(?<![\w]){escaped_tok}(?![\w]|(?<=\d)\.\d)"
             if re.search(pattern, sent):
                 has_ungrounded = True
                 break
@@ -200,3 +201,52 @@ def strip_and_note(
             result = note
 
     return result
+
+
+# ---------------------------------------------------------------------------
+# Plain-English chat policy (spec 002-local-chat, FR-LC-03):
+# prose must contain no figures at all. Numbers live behind links.
+# ---------------------------------------------------------------------------
+
+# ASSUMPTION: English number words are the relevant leak vector for the English prose path.
+_NUMBER_WORDS = (
+    "zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen",
+    "eighteen", "nineteen", "twenty", "thirty", "forty", "fifty", "sixty", "seventy",
+    "eighty", "ninety", "hundred", "thousand", "million", "billion",
+    "half", "halves", "double", "triple", "twice", "thrice", "percent",
+)
+_NUMBER_WORD_PATTERN = re.compile(r"\b(?:" + "|".join(_NUMBER_WORDS) + r")\b", re.IGNORECASE)
+_PER_CENT_PATTERN = re.compile(r"\bper\s+cent\b", re.IGNORECASE)
+_FIGURE_PATTERN = re.compile(r"(?:RM\s*)?[-+]?\d+(?:[.,/]\d+)*(?:%|x\b)?|%", re.IGNORECASE)
+
+
+@dataclass
+class NumberCheckResult:
+    """Outcome of the no-numbers check on plain-English chat prose."""
+
+    passed: bool
+    offending_tokens: list[str] = field(default_factory=list)
+
+
+def verify_no_numbers(
+    text: str,
+    allowed_tokens: Iterable[str] | None = None,
+) -> NumberCheckResult:
+    """Reject any digit, figure, currency amount, percentage or number word in ``text``.
+
+    ``allowed_tokens`` are identifiers or user-typed numbers that may be echoed back
+    verbatim (warrant codes, tickers, numbers the user typed).
+    """
+    working = text.replace("\u202f", " ").replace("\u00a0", " ")
+
+    for tok in sorted({t.strip() for t in (allowed_tokens or []) if t and t.strip()}, key=len, reverse=True):
+        working = re.sub(rf"(?<![\w.]){re.escape(tok)}(?!\w)", " ", working, flags=re.IGNORECASE)
+
+    offending: list[str] = []
+    offending.extend(m.group(0).strip() for m in _FIGURE_PATTERN.finditer(working))
+    offending.extend(m.group(0) for m in _NUMBER_WORD_PATTERN.finditer(working))
+    offending.extend(m.group(0) for m in _PER_CENT_PATTERN.finditer(working))
+
+    offending = [tok for tok in offending if tok]
+    return NumberCheckResult(passed=not offending, offending_tokens=offending)

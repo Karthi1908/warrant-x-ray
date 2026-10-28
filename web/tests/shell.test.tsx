@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { DataBadge } from '../src/features/shell/DataBadge';
 import { DisclaimerBar } from '../src/features/shell/DisclaimerBar';
 import { StatusBanner } from '../src/features/shell/StatusBanner';
@@ -50,6 +50,20 @@ describe('Shell Components', () => {
       render(<Header mode="replay" asOf="2026-10-16 16:00" />);
       expect(screen.getByText('Warrant X-Ray')).toBeDefined();
       expect(screen.getByText(/Replay/i)).toBeDefined();
+    });
+
+    it('hides chat toggle button when chatEnabled is false', () => {
+      render(<Header chatEnabled={false} />);
+      expect(screen.queryByRole('button', { name: /Chat/i })).toBeNull();
+    });
+
+    it('shows chat toggle button and handles click when chatEnabled is true', () => {
+      const onToggle = vi.fn();
+      render(<Header chatEnabled={true} chatOpen={false} onToggleChat={onToggle} />);
+      const btn = screen.getByRole('button', { name: /Chat/i });
+      expect(btn).toBeDefined();
+      fireEvent.click(btn);
+      expect(onToggle).toHaveBeenCalled();
     });
   });
 

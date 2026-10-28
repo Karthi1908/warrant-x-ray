@@ -1,13 +1,17 @@
 import React from 'react';
 import { cn } from '../../lib/utils';
 import { CitationChip } from './CitationChip';
+import { LinkChip } from './LinkChip';
+import type { ViewLinkData } from '../../api/sse';
 import { ShieldCheck, AlertCircle } from 'lucide-react';
 
 export interface AssistantMessageProps {
   content: string;
   isPartial?: boolean;
   isVerified?: boolean;
+  links?: ViewLinkData[];
   onCitationClick?: (evidenceId: string) => void;
+  onLinkClick?: (href: string, link: ViewLinkData) => void;
   className?: string;
 }
 
@@ -15,7 +19,9 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({
   content,
   isPartial = false,
   isVerified = true,
+  links,
   onCitationClick,
+  onLinkClick,
   className,
 }) => {
   // Parse text into regular segments and citation chips [E#]
@@ -65,9 +71,18 @@ export const AssistantMessage: React.FC<AssistantMessageProps> = ({
         {renderFormattedContent(content)}
       </div>
 
+      {links && links.length > 0 && (
+        <div className="pt-2 flex flex-wrap gap-2">
+          {links.map((link, idx) => (
+            <LinkChip key={`${link.href}-${idx}`} link={link} onClick={onLinkClick} />
+          ))}
+        </div>
+      )}
+
       <div className="pt-2 border-t border-border/40 flex items-center justify-between text-[11px] text-muted-foreground italic">
-        <span>Describe, never advise. Figures computed deterministically.</span>
+        <span>Describe, never advise. Calculations and metrics provided via interactive links.</span>
       </div>
     </div>
   );
 };
+

@@ -38,11 +38,13 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Identification & Contract',
       label: 'Issuer',
+      sublabel: 'Financial institution issuing the warrant & providing market quotes',
       getValue: (w) => <span className="font-sans font-medium text-foreground">{w.issuer}</span>,
     },
     {
       group: 'Identification & Contract',
       label: 'Type',
+      sublabel: 'Call (bullish: gains as stock rises) or Put (bearish: gains as stock falls)',
       getValue: (w) => (
         <span
           className={cn(
@@ -59,21 +61,25 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Identification & Contract',
       label: 'Strike Price',
+      sublabel: 'Target exercise price the stock must exceed (for Calls) to finish in the money',
       getValue: (w) => <span className="font-mono font-medium text-foreground">{w.display_strike}</span>,
     },
     {
       group: 'Identification & Contract',
       label: 'Exercise Ratio',
+      sublabel: 'Number of warrants per 1 underlying share (lower = higher per-warrant exposure)',
       getValue: (w) => <span className="font-mono text-muted-foreground">{w.display_ratio}</span>,
     },
     {
       group: 'Identification & Contract',
       label: 'Expiry Date',
+      sublabel: 'Last trading day before contract rights cease and warrant expires',
       getValue: (w) => <span className="font-mono text-foreground">{w.expiry_date}</span>,
     },
     {
       group: 'Identification & Contract',
       label: 'Days to Expiry',
+      sublabel: 'Calendar days remaining until maturity (theta decay accelerates below 30d)',
       getValue: (w) => <span className="font-mono text-muted-foreground">{w.display_days_to_expiry ?? 'N/A'}</span>,
     },
 
@@ -81,6 +87,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Quotes & Trading Costs',
       label: 'Bid / Ask Quotes',
+      sublabel: 'Live market maker quotes: sell instantly at Bid, buy from issuer at Ask',
       getValue: (w) => (
         <span className="font-mono font-medium text-foreground">
           {w.display_bid ?? '—'} / {w.display_ask ?? '—'}
@@ -90,12 +97,13 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Quotes & Trading Costs',
       label: 'Mid Price',
+      sublabel: 'Theoretical fair mid-market center price: (Bid + Ask) / 2',
       getValue: (w) => <span className="font-mono text-muted-foreground">{w.display_mid ?? '—'}</span>,
     },
     {
       group: 'Quotes & Trading Costs',
       label: 'Bid-Ask Spread %',
-      sublabel: 'Immediate round-trip cost',
+      sublabel: 'Immediate round-trip toll ((Ask - Bid) / Mid) incurred on entry & exit',
       getValue: (w) => {
         const wide = (w.spread_pct ?? 0) > 0.1;
         return (
@@ -115,7 +123,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Quant Metrics',
       label: 'Effective Gearing',
-      sublabel: 'Option delta leverage',
+      sublabel: 'True leverage multiplier: estimated % warrant move for every 1% stock move',
       getValue: (w) => (
         <span className="font-mono font-bold text-foreground">
           {w.display_effective_gearing ?? 'N/A'}
@@ -125,7 +133,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Quant Metrics',
       label: 'Headline Implied Vol (mid)',
-      sublabel: 'Market pricing level',
+      sublabel: 'Annualized expected volatility priced by issuer (higher IV = richer option premium)',
       getValue: (w) => (
         <span className="font-mono font-medium text-foreground">
           {w.display_headline_iv ?? 'N/A'}
@@ -137,7 +145,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: `Holding Friction (${holdingDays} Days)`,
       label: 'Spread Cost',
-      sublabel: 'Entry/exit friction',
+      sublabel: 'Fixed round-trip friction surrendered immediately to the market maker spread',
       getValue: (w) => (
         <span className="font-mono text-foreground">{w.display_spread_cost ?? 'N/A'}</span>
       ),
@@ -145,7 +153,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: `Holding Friction (${holdingDays} Days)`,
       label: 'Flat Underlying Decay',
-      sublabel: 'Theta loss if share flat',
+      sublabel: `Cumulative theta cash lost if the underlying stock remains stationary over ${holdingDays}d`,
       getValue: (w) => (
         <span className="font-mono text-rose-600 dark:text-rose-400 font-medium">
           {w.display_flat_decay ?? 'N/A'}
@@ -155,7 +163,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: `Holding Friction (${holdingDays} Days)`,
       label: 'IV Crush Estimate (-5 pts)',
-      sublabel: 'Loss if IV drops 5 points',
+      sublabel: 'Projected % price drop if the issuer lowers implied volatility by 5.0 points',
       getValue: (w) => (
         <span className="font-mono text-amber-600 dark:text-amber-400">
           {w.display_iv_crush ?? 'N/A'}
@@ -165,7 +173,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: `Holding Friction (${holdingDays} Days)`,
       label: 'Breakeven Share Move',
-      sublabel: 'Underlying % needed to break even',
+      sublabel: `Minimum % move needed in underlying stock over ${holdingDays}d to overcome friction`,
       getValue: (w) => (
         <span className="font-mono font-bold text-foreground">
           {w.display_breakeven_move ?? 'N/A'}
@@ -177,6 +185,7 @@ export const CompareGrid: React.FC<CompareGridProps> = ({
     {
       group: 'Active Risk Flags',
       label: 'Triggered Flags',
+      sublabel: 'Evaluated structural risk warnings (wide spread, extreme gearing, steep decay)',
       getValue: (w) => {
         if (!w.flags || w.flags.length === 0) {
           return (

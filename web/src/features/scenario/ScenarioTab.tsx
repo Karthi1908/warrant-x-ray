@@ -151,52 +151,72 @@ export const ScenarioTab: React.FC<ScenarioTabProps> = ({
 
       {/* Top 4 KPI metric cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-blue-600">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Entry Price (Ask)
-          </span>
-          <div className="text-lg font-mono font-bold text-foreground mt-1">
-            {result?.display_entry_price || '—'}
+        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-blue-600 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Entry Price (Ask)
+            </span>
+            <div className="text-lg font-mono font-bold text-foreground mt-1">
+              {result?.display_entry_price || '—'}
+            </div>
           </div>
+          <p className="mt-2 text-[10px] text-muted-foreground leading-tight border-t border-border/50 pt-1.5">
+            Realistic buying price using current Ask quote (incorporates day-one spread friction).
+          </p>
         </div>
 
-        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-indigo-600">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Theoretical Exit
-          </span>
-          <div className="text-lg font-mono font-bold text-foreground mt-1">
-            {result?.display_exit_price || '—'}
+        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-indigo-600 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Theoretical Exit
+            </span>
+            <div className="text-lg font-mono font-bold text-foreground mt-1">
+              {result?.display_exit_price || '—'}
+            </div>
           </div>
+          <p className="mt-2 text-[10px] text-muted-foreground leading-tight border-t border-border/50 pt-1.5">
+            Projected selling Bid price at your horizon after factoring in stock move, theta decay, and IV shift.
+          </p>
         </div>
 
         <div className={cn(
-          'rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4',
+          'rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 flex flex-col justify-between',
           (result?.pnl_pct || 0) >= 0 ? 'border-l-emerald-600' : 'border-l-rose-600'
         )}>
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Warrant P&L
-          </span>
-          <div
-            className={cn(
-              'text-lg font-mono font-bold mt-1',
-              (result?.pnl_pct || 0) > 0
-                ? 'text-emerald-700 dark:text-emerald-400'
-                : (result?.pnl_pct || 0) < 0
-                ? 'text-rose-700 dark:text-rose-400'
-                : 'text-muted-foreground'
-            )}
-          >
-            {result?.display_pnl_pct || '—'}
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Warrant P&L
+            </span>
+            <div
+              className={cn(
+                'text-lg font-mono font-bold mt-1',
+                (result?.pnl_pct || 0) > 0
+                  ? 'text-emerald-700 dark:text-emerald-400'
+                  : (result?.pnl_pct || 0) < 0
+                  ? 'text-rose-700 dark:text-rose-400'
+                  : 'text-muted-foreground'
+              )}
+            >
+              {result?.display_pnl_pct || '—'}
+            </div>
           </div>
+          <p className="mt-2 text-[10px] text-muted-foreground leading-tight border-t border-border/50 pt-1.5">
+            Simulated net return on capital: ((Exit - Entry) / Entry) after round-trip spread toll and time decay.
+          </p>
         </div>
 
-        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-amber-600">
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Breakeven Move
-          </span>
-          <div className="text-lg font-mono font-bold text-amber-700 dark:text-amber-400 mt-1">
-            {result?.display_breakeven_move || '—'}
+        <div className="rounded-xl border-2 border-border bg-card p-3.5 shadow-xs border-l-4 border-l-amber-600 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Breakeven Move
+            </span>
+            <div className="text-lg font-mono font-bold text-amber-700 dark:text-amber-400 mt-1">
+              {result?.display_breakeven_move || '—'}
+            </div>
           </div>
+          <p className="mt-2 text-[10px] text-muted-foreground leading-tight border-t border-border/50 pt-1.5">
+            Minimum stock % move required over this holding period to overcome friction and achieve 0% P&L.
+          </p>
         </div>
       </div>
 
