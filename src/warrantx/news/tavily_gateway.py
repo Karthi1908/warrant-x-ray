@@ -29,6 +29,18 @@ class TavilyBudgetExhaustedError(TavilyError):
 class TavilyGateway:
     """Gateway client for Tavily news search and content extraction."""
 
+    EXCLUDED_SOCIAL_DOMAINS = [
+        "facebook.com",
+        "instagram.com",
+        "tiktok.com",
+        "twitter.com",
+        "x.com",
+        "youtube.com",
+        "linkedin.com",
+        "pinterest.com",
+        "reddit.com",
+    ]
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -36,7 +48,8 @@ class TavilyGateway:
         enabled: bool = True,
         daily_credit_limit: int = 200,
     ) -> None:
-        self.api_key = api_key or os.environ.get("WX_TAVILY_API_KEY", "")
+        raw_key = api_key if api_key is not None else os.environ.get("WX_TAVILY_API_KEY", "")
+        self.api_key = raw_key.strip().strip('"').strip("'")
         self.timeout = timeout
         self.enabled = enabled and bool(self.api_key)
         self.daily_credit_limit = daily_credit_limit
@@ -60,20 +73,29 @@ class TavilyGateway:
             return []
 
         try:
-            # Strictly enforce 7 days
+            # Strictly enforce 7 days and exclude social media noise
             response = await self.client.search(
                 query=query,
                 topic="news",
                 days=7,
                 max_results=max_results,
+                exclude_domains=self.EXCLUDED_SOCIAL_DOMAINS,
             )
+            raw_results = response.get("results", []) if isinstance(response, dict) else []
+            if not raw_results:
+                response = await self.client.search(
+                    query=query,
+                    topic="general",
+                    days=7,
+                    max_results=max_results,
+                    exclude_domains=self.EXCLUDED_SOCIAL_DOMAINS,
+                )
+                raw_results = response.get("results", []) if isinstance(response, dict) else []
         except Exception as err:
             err_msg = str(err).lower()
             if "usage limit" in err_msg or "budget" in err_msg or "quota" in err_msg or "credit" in err_msg:
                 raise TavilyBudgetExhaustedError(str(err)) from err
             raise TavilyError(f"Tavily search failed: {err}") from err
-
-        raw_results = response.get("results", []) if isinstance(response, dict) else []
         formatted: list[dict[str, Any]] = []
 
         for item in raw_results:

@@ -75,16 +75,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Initialize news service
     tavily_gateway = None
-    if settings.mode == "live" and settings.tavily_api_key:
+    news_mode = settings.mode
+    if settings.mode != "replay" and settings.environment != "test" and settings.tavily_api_key:
         from warrantx.news.tavily_gateway import TavilyGateway
         tavily_gateway = TavilyGateway(
             api_key=settings.tavily_api_key,
             daily_credit_limit=settings.tavily_daily_credits,
         )
+        if tavily_gateway.enabled:
+            news_mode = "live"
     from warrantx.news.cache import NewsService
     app.state.news_service = NewsService(
         repo=repo,
-        mode=settings.mode,
+        mode=news_mode,
         tavily_gateway=tavily_gateway,
     )
 
@@ -92,12 +95,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     try:
         latest = await repo.get_latest_good_snapshot()
         if latest is None:
-            try:
-                from scripts.live_web_ingestion import run_live_ingestion
-                logger.info("running_live_web_ingestion_on_startup")
-                await run_live_ingestion(settings.database_url)
-            except Exception as live_err:
-                logger.warning("live_web_ingestion_failed_falling_back_to_synthetic", error=str(live_err))
+            if settings.source_enabled and settings.environment != "test":
+                try:
+                    from scripts.live_web_ingestion import run_live_ingestion
+                    logger.info("running_live_web_ingestion_on_startup")
+                    await run_live_ingestion(settings.database_url)
+                except Exception as live_err:
+                    logger.warning("live_web_ingestion_failed_falling_back_to_synthetic", error=str(live_err))
+                    await repo.load_synthetic_sample_database()
+            else:
                 await repo.load_synthetic_sample_database()
     except Exception as e:
         logger.warning("sample_database_load_failed", error=str(e))

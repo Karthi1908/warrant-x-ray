@@ -1,14 +1,9 @@
 # Warrant X-Ray
 
-[![CI](https://github.com/warrant-xray/warrants-x-ray/actions/workflows/ci.yml/badge.svg)](https://github.com/warrant-xray/warrants-x-ray/actions/workflows/ci.yml)
+[![CI](https://github.com/Karthi1908/warrant-x-ray/actions/workflows/ci.yml/badge.svg)](https://github.com/Karthi1908/warrant-x-ray/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Warrant X-Ray is an educational risk analytics and scenario simulation platform for Malaysian retail traders of Bursa Malaysia structured warrants. It answers one essential question: **what does holding this warrant actually cost, and what has to go right for it to pay off?**
-
-> [!NOTE]
-> **Release Status & Feature Notice**:
-> - **Local-Only Plain-English Chat**: The conversational chat copilot is disabled by default in production and Cloud Run (`WX_CHAT_ENABLED=false`). For local development, setting `WX_CHAT_ENABLED=true` on direct loopback requests (`127.0.0.1` / `localhost`) enables a strict plain-English copilot. The copilot explains warrants without numbers, percentages, or financial advice; all calculation-related metrics and figures are provided exclusively through interactive deep links (`card`, `scenario`, `compare`, `stock`, `news`).
-> - **Market Data Availability**: Live, real-time intraday tick data from Bursa Malaysia is currently not connected. The application runs on comprehensive synthetic market data fixtures and historical snapshots to demonstrate the quantitative engine, Greeks recalculation, and scenario stress-testing.
 
 Every number shown to the user comes from a deterministic quant engine—LLMs never compute, convert, or round. Every news item cites a verifiable source URL and retrieval timestamp via Tavily Search over a strict 7-day recency window.
 
@@ -23,7 +18,17 @@ Every number shown to the user comes from a deterministic quant engine—LLMs ne
 
 ---
 
-## 2. Setup & Run Instructions
+## 2. Core Features
+
+- **Deterministic Quant Engine**: Pure Python Black-Scholes pricing, Brent implied-volatility solver (Bid/Mid/Ask), holding cost decomposition (bid-ask spread friction + daily theta decay), and issuer-vs-quant discrepancy flags.
+- **Interactive Scenario Simulator & Multi-Warrant Compare**: Real-time stress testing across spot price moves, holding horizons, and IV shifts, plus side-by-side comparison across effective gearing, spread friction, and time decay.
+- **NVIDIA Nemotron Reasoning (via Nebius Token Factory)**: Three-tier routing (`Nemotron-3-Nano`, `Super`, and `Ultra`) with automatic circuit breakers and daily USD budget caps powering adversarial Red-Team Review in 4-Stage Deep Risk Reports.
+- **Risk Copilot Chat**: Plain-English conversational copilot enforced by a zero-number verify-before-stream guardrail, bilingual (English / Bahasa Melayu) advice refusal, and interactive deep-link chips (`card`, `scenario`, `compare`, `stock`, `news`).
+- **Tavily 7-Day Market Intelligence & Screener Crawl**: Grounded 7-day Bursa Malaysia news search and content extraction with prompt-injection sanitization, multi-domain corroboration, 30-minute SQLite caching, and automated warrant screener crawling with direct fallback.
+
+---
+
+## 3. Setup & Run Instructions
 
 ### Prerequisites
 - Python 3.11+
@@ -61,62 +66,35 @@ Access the application at `http://localhost:8000`.
 
 ---
 
-## 3. System Architecture
+## 4. System Architecture
 
 ```text
-Browser (Vite + React SPA: Screener | X-Ray Card | Scenario Simulator | Compare | News)
-   │  REST (JSON): /api/warrants, /api/scenario, /api/compare, /api/news
+Browser (Vite + React SPA: Screener | X-Ray Card | Scenario Simulator | Compare | News | Chat)
+   │  REST (JSON) & SSE: /api/warrants, /api/scenario, /api/compare, /api/news, /api/report, /api/chat
    ▼
-+--------------------------- FastAPI App ----------------------------+
-|  Middleware: anonymous sessions, daily-salted IP/UA hash, limits   |
-|                                                                    |
-|  Quant Core (Pure Functions)  <--- Repo (SQLite Snapshots & Data)  |
-|  - Black-Scholes pricing           - Append-only snapshots         |
-|  - Brent IV solver (Bid/Mid/Ask)   - Normalized warrant rows       |
-|  - Holding cost & risk flags       - Replay & Synthetic mode       |
-|                                                                    |
-|  Data Intelligence & Search                                        |
-|  - Tavily Search Gateway (strict 7-day recency, Malaysian domains) |
-|  - Nemotron reasoning layer (reserved for Deep Risk Reports)       |
-|  - *Chat SSE stream endpoint: currently disabled in this release*   |
-+--------------------------------------------------------------------+
++--------------------------------- FastAPI App ----------------------------------+
+|  Middleware: anonymous sessions, daily-salted IP/UA hash, rate & budget limits |
+|                                                                                |
+|  Quant Core (Pure Functions)        <--- Repo (SQLite Snapshots & Persistence) |
+|  - Black-Scholes pricing                 - Append-only market snapshots        |
+|  - Brent IV solver (Bid/Mid/Ask)         - Normalized warrant & underlying DB  |
+|  - Holding cost & risk flags             - 30-min news cache & replay sets     |
+|                                                                                |
+|  AI Reasoning & Grounded Search                                                |
+|  - NVIDIA Nemotron (Nebius Token Factory: Nano / Super / Ultra + circuit brkr) |
+|  - Tavily Search, Extract & Crawl (strict 7-day recency, domain corroboration) |
+|  - Verify-Before-Stream Guardrails (zero-number chat, EN/BM advice refusal)    |
++--------------------------------------------------------------------------------+
 ```
 
 ---
 
-## 4. Open-Source License
+## 5. Model Usage & Cost Tracking
+
+Costs are tracked per tier in SQLite (`llm_calls` and `budget_ledger`) without storing personal data or raw IP addresses. Run `uv run python scripts/cost_report.py` to view live token and cost totals by model tier and date.
+
+---
+
+## 6. Open-Source License
 
 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
-
----
-
-## 5. Verified vs. Unverified Status
-
-Following Constitution Principle IV and AI Developer Agent Rules, unverified external parameters are never treated as facts until confirmed via verification spikes:
-
-| Area | Status | Verification Protocol |
-|:---|:---:|:---|
-| **Quant Engine Formulas** | Verified | Unit tests against golden values, put-call parity, and Brent IV round-trip |
-| **Bursa Trading Calendar** | Pending T013 | 2026 & 2027 calendars to be verified via official Bursa circulars |
-| **Token Factory Tool Calling** | Pending T009 | Capability matrix spike against Nebius Token Factory endpoints |
-| **Tavily Malaysian Sources** | Pending T015 | Top Malaysian financial domains benchmarked for news citations |
-
----
-
-## 6. Model Usage & Cost Table (from `scripts/cost_report.py`)
-
-Costs are tracked per tier and logged in SQLite without storing user personal data or raw IP addresses.
-
-### LLM Usage by Tier (AC-19)
-| Tier  | Calls | In Tokens | Out Tokens | Cost USD  |
-|:------|:------|:----------|:-----------|:----------|
-| ultra | 4     | 2,000     | 600        | $0.001800 |
-
-### Daily LLM Cost Breakdown
-| Date       | Calls | In Tokens | Out Tokens | Avg Latency (ms) | Cost USD  |
-|:-----------|:------|:----------|:-----------|:-----------------|:----------|
-| 2026-10-17 | 3     | 1,500     | 450        | 1200.0           | $0.001350 |
-| 2026-10-18 | 1     | 500       | 150        | 1200.0           | $0.000450 |
-
-*Run `uv run python scripts/cost_report.py` to refresh live totals.*
-

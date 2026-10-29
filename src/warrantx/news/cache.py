@@ -14,11 +14,60 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from warrantx.api.logging import get_logger
 from warrantx.data.repo import AsyncRepository
 from warrantx.news.corroborate import corroborate_news, deduplicate_news
 from warrantx.news.structure import filter_7day_window, sanitize_news_item
 from warrantx.news.tavily_gateway import TavilyGateway
 from warrantx.tools.models import NewsItem
+
+logger = get_logger("warrantx.news")
+
+TICKER_COMPANY_NAMES: dict[str, str] = {
+    "MAYBANK": "Maybank Malayan Banking Berhad",
+    "TENAGA": "Tenaga Nasional Berhad TNB",
+    "PBBANK": "Public Bank Berhad",
+    "CIMB": "CIMB Group Holdings Berhad",
+    "IHH": "IHH Healthcare Berhad",
+    "CELCOMDIGI": "CelcomDigi Berhad",
+    "PCHEM": "Petronas Chemicals Group Berhad",
+    "INARI": "Inari Amertron Berhad",
+    "YTL": "YTL Corporation Berhad",
+    "YTLPOWR": "YTL Power International Berhad",
+    "GAMUDA": "Gamuda Berhad",
+    "SUNWAY": "Sunway Berhad",
+    "BURSA": "Bursa Malaysia Berhad",
+    "GENTING": "Genting Berhad",
+    "GENM": "Genting Malaysia Berhad",
+    "AXIATA": "Axiata Group Berhad",
+    "MAXIS": "Maxis Berhad",
+    "TELEKOM": "Telekom Malaysia Berhad TM",
+    "MISC": "MISC Berhad",
+    "SIME": "Sime Darby Berhad",
+    "SDG": "SD Guthrie Berhad",
+    "SIMEPROP": "Sime Darby Property Berhad",
+    "IOICORP": "IOI Corporation Berhad",
+    "KLK": "Kuala Lumpur Kepong Berhad",
+    "RHBBANK": "RHB Bank Berhad",
+    "HLBANK": "Hong Leong Bank Berhad",
+    "AMBANK": "AMMB Holdings AmBank",
+    "PMETAL": "Press Metal Aluminium Holdings Berhad",
+    "PETGAS": "Petronas Gas Berhad",
+    "PETDAG": "Petronas Dagangan Berhad",
+    "MRDIY": "MR D.I.Y. Group Malaysia",
+    "NESTLE": "Nestle Malaysia Berhad",
+    "QL": "QL Resources Berhad",
+    "DIALOG": "Dialog Group Berhad",
+    "MYEG": "MY E.G. Services Berhad Zetrix",
+    "TOPGLOV": "Top Glove Corporation Berhad",
+    "HARTALEGA": "Hartalega Holdings Berhad",
+    "KOSSAN": "Kossan Rubber Industries",
+    "SPSETIA": "S P Setia Berhad",
+    "UEMS": "UEM Sunrise Berhad",
+    "MAHB": "Malaysia Airports Holdings Berhad",
+    "CAPITALA": "Capital A AirAsia",
+    "AAX": "AirAsia X Berhad",
+}
 
 FIXTURES_PATH = Path(__file__).resolve().parent.parent.parent.parent / "tests" / "fixtures" / "news" / "sample_news.json"
 
@@ -33,8 +82,12 @@ class NewsService:
         tavily_gateway: TavilyGateway | None = None,
     ) -> None:
         self.repo = repo
-        self.mode = mode.lower()
         self.tavily_gateway = tavily_gateway
+        norm_mode = mode.lower()
+        if norm_mode != "replay" and tavily_gateway is not None and getattr(tavily_gateway, "enabled", False):
+            self.mode = "live"
+        else:
+            self.mode = norm_mode
         self._fixtures: dict[str, list[dict[str, Any]]] | None = None
 
     def _load_fixtures(self) -> dict[str, list[dict[str, Any]]]:
@@ -100,13 +153,20 @@ class NewsService:
 
         # 2. Check 30-minute short term cache
         cached = await self.repo.get_news_cache(cache_key, max_age_seconds=1800)
-        if cached and "items" in cached:
-            return [NewsItem(**item) for item in cached["items"]]
+        if cached and cached.get("items"):
+            cached_items = [NewsItem(**item) for item in cached["items"]]
+            is_illustrative = any(
+                "[ILLUSTRATIVE]" in item.title or any("[ILLUSTRATIVE]" in f for f in item.facts)
+                for item in cached_items
+            )
+            if not (self.mode == "live" and self.tavily_gateway and self.tavily_gateway.enabled and is_illustrative):
+                return cached_items
 
         # 3. Live mode with Tavily gateway available
-        if self.mode == "live" and self.tavily_gateway:
+        if self.mode == "live" and self.tavily_gateway and self.tavily_gateway.enabled:
             try:
-                search_query = query or f"{normalized_ticker} Bursa Malaysia stock news"
+                company_hint = TICKER_COMPANY_NAMES.get(normalized_ticker, normalized_ticker)
+                search_query = query or f"{company_hint} ({normalized_ticker}) Malaysia stock financial news"
                 raw_results = await self.tavily_gateway.search_news(search_query)
 
                 # 7-day strict recency filter (FR-016)
@@ -116,22 +176,23 @@ class NewsService:
                 sanitized = [sanitize_news_item(r) for r in filtered]
 
                 # Convert to NewsItem and corroborate
-                news_items = [NewsItem(**s) for s in sanitized]
+                news_items = [NewsItem(**s) for s in sanitized if s.get("title") and s.get("url")]
                 deduped = deduplicate_news(news_items)
                 corroborated = corroborate_news(deduped, ticker=normalized_ticker)
 
-                # Cache in short-term cache and persist replay set
-                dumped = [item.model_dump() for item in corroborated]
-                await self.repo.set_news_cache(cache_key, {"items": dumped})
-                await self.repo.save_stored_news_set(
-                    ticker=normalized_ticker,
-                    items=dumped,
-                    window_days=7,
-                )
-                return corroborated
-            except Exception:
-                # On live fetch error, gracefully fall back per Constitution IX
-                pass
+                if corroborated:
+                    # Cache in short-term cache and persist replay set
+                    dumped = [item.model_dump() for item in corroborated]
+                    await self.repo.set_news_cache(cache_key, {"items": dumped})
+                    await self.repo.save_stored_news_set(
+                        ticker=normalized_ticker,
+                        items=dumped,
+                        window_days=7,
+                    )
+                    return corroborated
+            except Exception as err:
+                # On live fetch error, log and gracefully fall back per Constitution IX
+                logger.warning("tavily_news_fetch_failed", ticker=normalized_ticker, error=str(err))
 
         # 4. Sample / fallback mode: check stored news set or synthetic fixtures
         stored = await self.repo.get_stored_news_set(normalized_ticker)

@@ -47,6 +47,11 @@ RUN mkdir -p /app/data && chown -R appuser:appuser /app
 USER appuser
 
 ENV PORT=8000
+ENV WX_MODE=live
+ENV WX_SOURCE_ENABLED=true
+ENV WX_TAVILY_RESEARCH=true
+ENV WX_TAVILY_CRAWL=true
+ENV WX_CHAT_ENABLED=true
 EXPOSE 8000 8080
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

@@ -384,7 +384,7 @@ async def get_news(
         "count": len(items),
         "recency_window_days": 7,
         "as_of": datetime.now(timezone.utc).isoformat(),
-        "mode": mode,
+        "mode": result_dict.get("mode", mode),
         "evidence": evidence.model_dump(),
     }
 
